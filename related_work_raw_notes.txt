@@ -1,0 +1,87 @@
+# Related Work: Raw Extracted Notes
+
+## Deep Learning Approaches
+- **EfficientNet, ResNet, DenseNet, CNNs, Vision Transformers (ViT, DINO)**
+  - EfficientNet, ResNet50, DenseNet-121, and custom CNNs are referenced in both code and literature (see lit_riv_summaries.csv).
+  - DINOv3 (self-supervised ViT) implemented in `dino_v3/` for robust feature learning; supports transfer learning and pretraining.
+  - Hybrid models: combine image features (ResNet50 backbone) with structured clinical features (thickness, stage_ajcc, type) for binary classification (README, main pipeline).
+  - Preprocessing includes ImageNet normalization for transfer learning.
+  - Segmentation/localization (DenseNet-121 + boundary localization) noted in literature for improving thickness estimation.
+  - Augmentation: Conservative and class-balanced augmentation strategies (strong for minority, light for majority) implemented in `preprocess.py`.
+  - Losses: Focal Loss and Weighted BCE Loss implemented to address class imbalance (see `losses.py`).
+  - Metrics: Accuracy, AUC, ROC, F1, and custom loss tracking in logs and code.
+
+## Traditional ML Approaches
+- **MLP, Random Forest, Handcrafted Features**
+  - MLP and Random Forest referenced in literature (e.g., hybrid pipelines for stage classification).
+  - StructuredPreprocessor in code for tabular/clinical features (z-score normalization, standardization).
+  - Feature engineering: clinical features (thickness, stage_ajcc, type) included in hybrid models.
+
+## Dataset Challenges
+- **Datasets: ISIC, HAM10000, EMB, PH2, Small Proprietary**
+  - ISIC and HAM10000 are primary sources for dermoscopic images (notebooks, data_inspection, README, lit_riv.csv).
+  - EMB (Early Melanoma Benchmark) used for prognosis and early-stage detection.
+  - Small proprietary datasets referenced in literature for thickness prediction (limitations: size, diversity).
+  - Class imbalance: BEN/MEL ratio ~88/12% (data_expo.txt, code validation, README).
+  - Data augmentation and class-balanced sampling to mitigate imbalance.
+  - Preprocessing pipeline includes validation for thickness range, stage_ajcc, and category distribution.
+
+## Explainable AI / Clinical Integration
+- **XAI, Grad-CAM, Clinical Features, Multimodal Models**
+  - XAI techniques (Grad-CAM, explainability) referenced in literature and code comments.
+  - Hybrid models integrate clinical features (thickness, stage_ajcc) with image features for improved interpretability.
+  - Multimodal modeling (image + tabular) supported in code and cited in related work.
+  - Clinical relevance: focus on non-invasive thickness prediction, stage classification, and interpretability for clinical adoption.
+
+## Extracted Paper/Code References
+- **Diagnosis and prognosis of melanoma from dermoscopy images using ML/DL (Naseri et al., 2023)**
+  - Models: DenseNet, DCNN
+  - Datasets: HAM10000, ISIC
+  - Key: Systematic review, >95% accuracy, highlights data standardization and thickness estimation challenges.
+  - Limitation: Data standardization, accessibility, non-invasive thickness estimation.
+
+- **Melanoma Breslow Thickness Classification Using Ensemble-Based Deep Learning (2025)**
+  - Models: Ensemble-based knowledge distillation, semi-supervised CNNs
+  - Key: Classifies in situ vs. invasive, addresses data imbalance.
+  - Limitation: Details require full text.
+
+- **Combined deep learning and machine learning methods for the prediction of stages of melanoma (Ashtagi et al., 2024)**
+  - Models: MLP, Random Forest
+  - Key: Hybrid model, 97.42% accuracy for stage classification based on thickness.
+  - Limitation: Dataset/split details, possible data leakage.
+
+- **Prediction of melanoma Breslow thickness using deep transfer learning algorithms (Perez-Poveda, 2023)**
+  - Models: EfficientNetB3, ResNetV2, InceptionV3
+  - Key: >81% accuracy for thickness (>0.8 mm vs. <=0.8 mm), outperforms dermatologists.
+
+- **Design of a Machine Learning System to Predict the Thickness of a Melanoma Lesion (Vrijants et al., 2023)**
+  - Models: EfficientNet CNN
+  - Dataset: Small proprietary
+  - Key: 71% balanced accuracy, limited by dataset size.
+
+- **A comprehensive analysis of dermoscopy images for melanoma detection via deep CNN features (Gujrati et al., 2022)**
+  - Models: DenseNet-121, MLP
+  - Dataset: ISIC 2017
+  - Key: 94.91% accuracy, boundary localization for thickness estimation.
+
+- **Assessment of melanoma thickness based on dermoscopy images: crowdsourced platform study (Polesie et al., 2022)**
+  - Models: CNN (pretrained and de novo)
+  - Dataset: 1456 dermoscopic images
+  - Key: >86.4% accuracy, CNNs outperform human readers.
+
+- **Multispectral Imaging Algorithm Predicts Breslow Thickness of Melanoma (Bozánnyi et al., 2021)**
+  - Models: Multispectral Imaging (MSI) algorithm
+  - Key: 78% sensitivity for thickness subgroups.
+
+- **Other references:**
+  - Grad-CAM, XAI, segmentation/localization, hybrid and ensemble models, multimodal integration, class-balanced augmentation, and advanced loss functions (Focal, Weighted BCE) are all present in code or cited literature.
+
+## Research Gaps Motivating This Project
+- Severe class imbalance in public datasets (BEN/MEL, thickness bins, stage_ajcc).
+- Lack of standardized, large, diverse datasets for thickness prediction (most are small or lack full clinical metadata).
+- Limited integration of clinical/tabular features with image-based models in prior work.
+- Explainability and clinical interpretability are under-addressed (few works combine XAI with clinical features).
+- Generalization across scanners, acquisition protocols, and populations is not well studied.
+- Need for robust, reproducible pipelines that combine transfer learning, augmentation, and advanced loss functions for real-world deployment.
+- Most prior works focus on binary classification (benign/malignant) rather than fine-grained thickness or stage prediction.
+- Few studies benchmark ensemble, semi-supervised, or self-supervised methods (e.g., DINO, knowledge distillation) for this task.

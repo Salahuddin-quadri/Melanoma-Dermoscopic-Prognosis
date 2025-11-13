@@ -1,0 +1,18 @@
+# Ignore the entire data folder
+data\
+data/
+# General outputs folder
+outputs/
+
+# DINOv3 outputs and checkpoints
+dino_v3/outputs_dino/
+dino_v3/outputs_dino/**
+
+# Checkpoints and common model weights
+**/checkpoints/
+**/checkpoints/**
+*.pt
+*.pth
+src\__pycache__
+
+notebooks/
