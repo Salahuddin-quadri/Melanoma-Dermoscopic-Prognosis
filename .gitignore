@@ -13,6 +13,6 @@ dino_v3/outputs_dino/**
 **/checkpoints/**
 *.pt
 *.pth
-src\__pycache__
-
-notebooks/
+src\__pycache__\
+*.pyc
+src\models\__pycache__

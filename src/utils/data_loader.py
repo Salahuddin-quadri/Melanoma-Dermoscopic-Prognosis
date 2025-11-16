@@ -222,7 +222,7 @@ def load_emb_data(metadata_path: str, image_dir: str) -> pd.DataFrame:
     if set(final_labels) != {0.0, 1.0}:
         raise ValueError(f"Invalid label values: {final_labels}. Expected [0.0, 1.0]")
 
-    df = pd.concat([df[df.label == 1.0], df[df.label == 0.0].sample(frac=0.05, random_state=42)]) #to keep 5% of ben samples
+    df = pd.concat([df[df.label == 1.0], df[df.label == 0.0].sample(frac=0.5, random_state=42)]) #to keep 50% of ben samples
 
 
     return df
