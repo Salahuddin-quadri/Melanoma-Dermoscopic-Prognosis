@@ -131,6 +131,13 @@ def main():
 	# Keep only numeric columns
 	feature_cols = [c for c in feature_cols if pd.api.types.is_numeric_dtype(splits.train[c])]
 
+	# Remove AJCC-related columns to avoid leakage with thickness
+	ajcc_cols = [c for c in feature_cols if "ajcc" in c.lower() or c.lower().startswith("stage")]
+	for col in ajcc_cols:
+		feature_cols.remove(col)
+	if ajcc_cols:
+		print(f"🔁 Removed AJCC-related clinical features from model input: {ajcc_cols}")
+
 	# Ensure feature columns are float dtypes to avoid bool/float assignment issues
 	for part in [splits.train, splits.val, splits.test]:
 		for col in feature_cols:

@@ -21,29 +21,36 @@ class WeightedBCELoss(nn.Module):
 	"""
 	Weighted Binary Cross-Entropy Loss.
 	
-	Addresses class imbalance by weighting the loss inversely proportional to
-	class frequency. The minority class gets higher weight.
+	Addresses class imbalance by weighting samples inversely proportional to
+	class frequency. The minority class receives higher weight.
 	
 	Formula: loss = -w_pos * y * log(p) - w_neg * (1-y) * log(1-p)
 	
-	Where weights are typically computed as:
-	- w_pos = n_total / (2 * n_positive)
-	- w_neg = n_total / (2 * n_negative)
-	
 	Args:
-		pos_weight: Weight for positive class (default: auto-computed)
+		pos_weight: Weight for positive class (float or tensor)
+		neg_weight: Weight for negative class (float or tensor)
 		reduction: 'mean', 'sum', or 'none'
 	"""
 	
-	def __init__(self, pos_weight: float | torch.Tensor | None = None, reduction: str = "mean"):
+	def __init__(
+		self,
+		pos_weight: float | torch.Tensor | None = None,
+		neg_weight: float | torch.Tensor | None = None,
+		reduction: str = "mean",
+	):
 		super().__init__()
-		if pos_weight is not None:
-			if isinstance(pos_weight, float):
-				pos_weight = torch.tensor(pos_weight)
-			# Register as buffer so it moves with the model to the correct device
-			self.register_buffer("pos_weight", pos_weight)
-		else:
-			self.register_buffer("pos_weight", None)
+		
+		def _to_buffer(value, default=1.0):
+			if value is None:
+				tensor = torch.tensor(default, dtype=torch.float32)
+			elif isinstance(value, torch.Tensor):
+				tensor = value.float()
+			else:
+				tensor = torch.tensor(float(value), dtype=torch.float32)
+			return tensor
+		
+		self.register_buffer("pos_weight", _to_buffer(pos_weight))
+		self.register_buffer("neg_weight", _to_buffer(neg_weight))
 		self.reduction = reduction
 	
 	def forward(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
@@ -60,16 +67,22 @@ class WeightedBCELoss(nn.Module):
 		# Ensure predictions are in [0, 1] range
 		if predictions.dim() > 1:
 			predictions = predictions.squeeze(1)
+		if targets.dim() > 1:
+			targets = targets.squeeze(1)
 		
 		# Clamp to avoid numerical issues
 		predictions = torch.clamp(predictions, min=1e-7, max=1.0 - 1e-7)
 		
-		# Standard BCE loss
+		# Build per-sample weights
+		pos_w = self.pos_weight.to(predictions.device)
+		neg_w = self.neg_weight.to(predictions.device)
+		weights = torch.where(targets == 1.0, pos_w, neg_w)
+		
+		# Standard BCE loss with weights
 		loss = F.binary_cross_entropy(
-			predictions, 
-			targets, 
-			weight=None,  # We'll apply pos_weight separately
-			pos_weight=self.pos_weight,
+			predictions,
+			targets,
+			weight=weights,
 			reduction='none'
 		)
 		
@@ -105,9 +118,10 @@ class WeightedBCELoss(nn.Module):
 			)
 		
 		n_total = n_positive + n_negative
-		# Standard weighting: inverse frequency
+		# Inverse-frequency weighting
 		pos_weight = torch.tensor(n_total / (2.0 * n_positive), device=device)
-		return cls(pos_weight=pos_weight)
+		neg_weight = torch.tensor(n_total / (2.0 * n_negative), device=device)
+		return cls(pos_weight=pos_weight, neg_weight=neg_weight)
 
 
 class FocalLoss(nn.Module):

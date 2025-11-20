@@ -30,7 +30,7 @@ Starting training with loss_alpha=0.5
   Regression weight: 0.5
 
 
-🖥️  Using device: cpu
+🖥️  Using device: cuda
 /usr/local/lib/python3.12/dist-packages/torch/utils/data/dataloader.py:558: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 2, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
   warnings.warn(_create_warning_msg(
 📦 DataLoader: 4 workers, batch_size=32
@@ -46,29 +46,585 @@ Starting training with loss_alpha=0.5
    MEL (class 1): 773 samples
    Imbalance ratio: 0.91:1
    Positive weight: 0.956
-   ✅ Using Weighted BCE Loss
+   Focal gamma: 2.0
+   ✅ Using Focal Loss (gamma=2.0)
 🎯 Optimizer: Adam (lr=0.001) with CosineAnnealingLR
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/content/Melanoma-Dermoscopic-Prognosis/src/main.py", line 238, in <module>
-    main()
-  File "/content/Melanoma-Dermoscopic-Prognosis/src/main.py", line 199, in main
-    _, ckpt_path = train_model(
-                   ^^^^^^^^^^^^
-  File "/content/Melanoma-Dermoscopic-Prognosis/src/train.py", line 736, in train_model
-    train_loss = _train_epoch(
-                 ^^^^^^^^^^^^^
-  File "/content/Melanoma-Dermoscopic-Prognosis/src/train.py", line 913, in _train_epoch
-    loss_cls = criterion_cls(outputs["cls"], batch["label"].to(device))
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1541, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/content/Melanoma-Dermoscopic-Prognosis/src/utils/losses.py", line 68, in forward
-    loss = F.binary_cross_entropy(
-           ^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: binary_cross_entropy() got an unexpected keyword argument 'pos_weight'
+                                                     
+============================================================
+   epoch               : 1
+   train_loss          : 0.1515
+   val_auc             : 1.0000
+   val_mae             : 0.2669
+   val_metric          : 0.9867
+   lr                  : 0.001000
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+✅ Saved best checkpoint (metric=0.9867) → outputs/train2/checkpoints/best.pt
+
+                                                     
+============================================================
+   epoch               : 2
+   train_loss          : 0.0854
+   val_auc             : 1.0000
+   val_mae             : 0.1079
+   val_metric          : 0.9946
+   lr                  : 0.001000
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+✅ Saved best checkpoint (metric=0.9946) → outputs/train2/checkpoints/best.pt
+
+                                                     
+============================================================
+   epoch               : 3
+   train_loss          : 0.0510
+   val_auc             : 1.0000
+   val_mae             : 0.0480
+   val_metric          : 0.9976
+   lr                  : 0.001000
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+✅ Saved best checkpoint (metric=0.9976) → outputs/train2/checkpoints/best.pt
+
+                                                     
+============================================================
+   epoch               : 4
+   train_loss          : 0.0394
+   val_auc             : 1.0000
+   val_mae             : 0.0526
+   val_metric          : 0.9974
+   lr                  : 0.000999
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (1/15)
+
+                                                     
+============================================================
+   epoch               : 5
+   train_loss          : 0.0433
+   val_auc             : 1.0000
+   val_mae             : 0.0674
+   val_metric          : 0.9966
+   lr                  : 0.000999
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (2/15)
+
+                                                     
+============================================================
+   epoch               : 6
+   train_loss          : 0.0403
+   val_auc             : 1.0000
+   val_mae             : 0.0368
+   val_metric          : 0.9982
+   lr                  : 0.000998
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+✅ Saved best checkpoint (metric=0.9982) → outputs/train2/checkpoints/best.pt
+
+                                                     
+============================================================
+   epoch               : 7
+   train_loss          : 0.0377
+   val_auc             : 1.0000
+   val_mae             : 0.0402
+   val_metric          : 0.9980
+   lr                  : 0.000998
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (1/15)
+
+                                                     
+============================================================
+   epoch               : 8
+   train_loss          : 0.0337
+   val_auc             : 1.0000
+   val_mae             : 0.0624
+   val_metric          : 0.9969
+   lr                  : 0.000997
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (2/15)
+
+                                                     
+============================================================
+   epoch               : 9
+   train_loss          : 0.0366
+   val_auc             : 1.0000
+   val_mae             : 0.0412
+   val_metric          : 0.9979
+   lr                  : 0.000996
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (3/15)
+
+                                                      
+============================================================
+   epoch               : 10
+   train_loss          : 0.0330
+   val_auc             : 1.0000
+   val_mae             : 0.0314
+   val_metric          : 0.9984
+   lr                  : 0.000995
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+✅ Saved best checkpoint (metric=0.9984) → outputs/train2/checkpoints/best.pt
+
+                                                      
+============================================================
+   epoch               : 11
+   train_loss          : 0.0360
+   val_auc             : 1.0000
+   val_mae             : 0.0535
+   val_metric          : 0.9973
+   lr                  : 0.000994
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (1/15)
+
+                                                      
+============================================================
+   epoch               : 12
+   train_loss          : 0.0371
+   val_auc             : 1.0000
+   val_mae             : 0.2005
+   val_metric          : 0.9900
+   lr                  : 0.000993
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (2/15)
+
+                                                      
+============================================================
+   epoch               : 13
+   train_loss          : 0.0322
+   val_auc             : 1.0000
+   val_mae             : 0.0492
+   val_metric          : 0.9975
+   lr                  : 0.000991
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (3/15)
+
+                                                      
+============================================================
+   epoch               : 14
+   train_loss          : 0.0342
+   val_auc             : 1.0000
+   val_mae             : 0.0461
+   val_metric          : 0.9977
+   lr                  : 0.000990
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (4/15)
+
+                                                      
+============================================================
+   epoch               : 15
+   train_loss          : 0.0287
+   val_auc             : 1.0000
+   val_mae             : 0.0274
+   val_metric          : 0.9986
+   lr                  : 0.000988
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+✅ Saved best checkpoint (metric=0.9986) → outputs/train2/checkpoints/best.pt
+
+                                                      
+============================================================
+   epoch               : 16
+   train_loss          : 0.0321
+   val_auc             : 1.0000
+   val_mae             : 0.0592
+   val_metric          : 0.9970
+   lr                  : 0.000986
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (1/15)
+
+                                                      
+============================================================
+   epoch               : 17
+   train_loss          : 0.0352
+   val_auc             : 1.0000
+   val_mae             : 0.0343
+   val_metric          : 0.9983
+   lr                  : 0.000984
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (2/15)
+
+                                                      
+============================================================
+   epoch               : 18
+   train_loss          : 0.0262
+   val_auc             : 1.0000
+   val_mae             : 0.0394
+   val_metric          : 0.9980
+   lr                  : 0.000982
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (3/15)
+
+                                                      
+============================================================
+   epoch               : 19
+   train_loss          : 0.0215
+   val_auc             : 1.0000
+   val_mae             : 0.0232
+   val_metric          : 0.9988
+   lr                  : 0.000980
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+✅ Saved best checkpoint (metric=0.9988) → outputs/train2/checkpoints/best.pt
+
+                                                      
+============================================================
+   epoch               : 20
+   train_loss          : 0.0233
+   val_auc             : 1.0000
+   val_mae             : 0.0406
+   val_metric          : 0.9980
+   lr                  : 0.000978
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (1/15)
+
+                                                      
+============================================================
+   epoch               : 21
+   train_loss          : 0.0287
+   val_auc             : 1.0000
+   val_mae             : 0.0513
+   val_metric          : 0.9974
+   lr                  : 0.000976
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (2/15)
+
+                                                      
+============================================================
+   epoch               : 22
+   train_loss          : 0.0365
+   val_auc             : 1.0000
+   val_mae             : 0.0276
+   val_metric          : 0.9986
+   lr                  : 0.000973
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (3/15)
+
+                                                      
+============================================================
+   epoch               : 23
+   train_loss          : 0.0236
+   val_auc             : 1.0000
+   val_mae             : 0.0489
+   val_metric          : 0.9976
+   lr                  : 0.000971
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (4/15)
+
+                                                      
+============================================================
+   epoch               : 24
+   train_loss          : 0.0241
+   val_auc             : 1.0000
+   val_mae             : 0.0286
+   val_metric          : 0.9986
+   lr                  : 0.000968
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (5/15)
+
+                                                      
+============================================================
+   epoch               : 25
+   train_loss          : 0.0363
+   val_auc             : 1.0000
+   val_mae             : 0.0305
+   val_metric          : 0.9985
+   lr                  : 0.000965
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (6/15)
+
+                                                      
+============================================================
+   epoch               : 26
+   train_loss          : 0.0287
+   val_auc             : 1.0000
+   val_mae             : 0.0424
+   val_metric          : 0.9979
+   lr                  : 0.000962
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (7/15)
+
+                                                      
+============================================================
+   epoch               : 27
+   train_loss          : 0.0285
+   val_auc             : 1.0000
+   val_mae             : 0.0219
+   val_metric          : 0.9989
+   lr                  : 0.000959
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+✅ Saved best checkpoint (metric=0.9989) → outputs/train2/checkpoints/best.pt
+
+                                                      
+============================================================
+   epoch               : 28
+   train_loss          : 0.0234
+   val_auc             : 1.0000
+   val_mae             : 0.0220
+   val_metric          : 0.9989
+   lr                  : 0.000956
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (1/15)
+
+                                                      
+============================================================
+   epoch               : 29
+   train_loss          : 0.0297
+   val_auc             : 1.0000
+   val_mae             : 0.0213
+   val_metric          : 0.9989
+   lr                  : 0.000953
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+✅ Saved best checkpoint (metric=0.9989) → outputs/train2/checkpoints/best.pt
+
+                                                      
+============================================================
+   epoch               : 30
+   train_loss          : 0.0238
+   val_auc             : 1.0000
+   val_mae             : 0.0365
+   val_metric          : 0.9982
+   lr                  : 0.000950
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (1/15)
+
+                                                      
+============================================================
+   epoch               : 31
+   train_loss          : 0.0231
+   val_auc             : 1.0000
+   val_mae             : 0.0732
+   val_metric          : 0.9963
+   lr                  : 0.000946
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (2/15)
+
+                                                      
+============================================================
+   epoch               : 32
+   train_loss          : 0.0290
+   val_auc             : 1.0000
+   val_mae             : 0.0268
+   val_metric          : 0.9987
+   lr                  : 0.000942
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (3/15)
+
+                                                      
+============================================================
+   epoch               : 33
+   train_loss          : 0.0222
+   val_auc             : 1.0000
+   val_mae             : 0.0408
+   val_metric          : 0.9980
+   lr                  : 0.000939
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (4/15)
+
+                                                      
+============================================================
+   epoch               : 34
+   train_loss          : 0.0249
+   val_auc             : 1.0000
+   val_mae             : 0.0395
+   val_metric          : 0.9980
+   lr                  : 0.000935
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (5/15)
+
+                                                      
+============================================================
+   epoch               : 35
+   train_loss          : 0.0192
+   val_auc             : 1.0000
+   val_mae             : 0.0293
+   val_metric          : 0.9985
+   lr                  : 0.000931
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (6/15)
+
+                                                      
+============================================================
+   epoch               : 36
+   train_loss          : 0.0226
+   val_auc             : 1.0000
+   val_mae             : 0.0235
+   val_metric          : 0.9988
+   lr                  : 0.000927
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (7/15)
+
+                                                      
+============================================================
+   epoch               : 37
+   train_loss          : 0.0232
+   val_auc             : 1.0000
+   val_mae             : 0.0295
+   val_metric          : 0.9985
+   lr                  : 0.000923
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (8/15)
+
+                                                      
+============================================================
+   epoch               : 38
+   train_loss          : 0.0194
+   val_auc             : 1.0000
+   val_mae             : 0.0344
+   val_metric          : 0.9983
+   lr                  : 0.000919
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (9/15)
+
+                                                      
+============================================================
+   epoch               : 39
+   train_loss          : 0.0236
+   val_auc             : 1.0000
+   val_mae             : 0.0410
+   val_metric          : 0.9980
+   lr                  : 0.000914
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (10/15)
+
+                                                      
+============================================================
+   epoch               : 40
+   train_loss          : 0.0240
+   val_auc             : 1.0000
+   val_mae             : 0.0373
+   val_metric          : 0.9981
+   lr                  : 0.000910
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (11/15)
+
+                                                      
+============================================================
+   epoch               : 41
+   train_loss          : 0.0250
+   val_auc             : 1.0000
+   val_mae             : 0.0333
+   val_metric          : 0.9983
+   lr                  : 0.000905
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (12/15)
+
+                                                      
+============================================================
+   epoch               : 42
+   train_loss          : 0.0267
+   val_auc             : 1.0000
+   val_mae             : 0.0332
+   val_metric          : 0.9983
+   lr                  : 0.000901
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (13/15)
+
+                                                      
+============================================================
+   epoch               : 43
+   train_loss          : 0.0215
+   val_auc             : 1.0000
+   val_mae             : 0.0304
+   val_metric          : 0.9985
+   lr                  : 0.000896
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (14/15)
+
+                                                      
+============================================================
+   epoch               : 44
+   train_loss          : 0.0179
+   val_auc             : 1.0000
+   val_mae             : 0.0316
+   val_metric          : 0.9984
+   lr                  : 0.000891
+   loss_cls_weight     : 0.50
+   loss_reg_weight     : 0.50
+============================================================
+❌ No improvement (15/15)
+
+🛑 Early stopping triggered after 15 epochs without improvement
+📊 Training plots saved to: outputs/train2/training_curves.png
+
+📁 Training outputs saved to: outputs/train2
+📝 Training log: outputs/train2/training_20251120_100425.log
+
+✓ Training complete! Best checkpoint: outputs/train2/checkpoints/best.pt
