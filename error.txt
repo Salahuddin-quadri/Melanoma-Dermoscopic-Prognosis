@@ -1,8 +1,74 @@
-the directory works very good
-so any changes you make be sure you update the other system components that are independent,
 
-1. I need Cosine Learning Rate Schedulers
-2. I need to save the training log file along with  visuals, just like yolo has,
-3. in the output, save the outputs just like yolo does, like train 1,...
-4.add R² to evaluation
-5. the "cls_loss_type": "weighted_bce", it return an error, check for it
+Dataset composition:
+  Class 0 (benign): 2,015 samples
+  Class 1 (malignant): 1,104 samples
+
+Stratified splitting enabled:
+  Total samples: 2,112
+  Class distribution: {1.0: 1104, 0.0: 1008}
+
+Final split statistics:
+  Train: 1,478 samples {1.0: 773, 0.0: 705}
+  Val: 317 samples {1.0: 166, 0.0: 151}
+  Test: 317 samples {1.0: 165, 0.0: 152}
+
+============================================================
+MODEL CONFIGURATION
+============================================================
+Model type: dino
+Task: regression (multitask)
+Clinical features: 7
+DINO checkpoint: dino_v3/outputs_dino/checkpoints/best.pt
+✓ Loaded domain-specific DINO weights from dino_v3/outputs_dino/checkpoints/best.pt
+Froze 7 encoder layers
+Fusion: cross_attention
+Frozen layers: 7
+============================================================
+
+Starting training with loss_alpha=0.5
+  Classification weight: 0.5
+  Regression weight: 0.5
+
+
+🖥️  Using device: cpu
+/usr/local/lib/python3.12/dist-packages/torch/utils/data/dataloader.py:558: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 2, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(_create_warning_msg(
+📦 DataLoader: 4 workers, batch_size=32
+
+📊 Training set label distribution:
+   Label 1.0: 773 samples
+   Label 0.0: 705 samples
+   Debug: Unique labels in train: [0.0, 1.0]
+   Debug: Label value counts: {1.0: 773, 0.0: 705}
+
+📊 Class imbalance info:
+   BEN (class 0): 705 samples
+   MEL (class 1): 773 samples
+   Imbalance ratio: 0.91:1
+   Positive weight: 0.956
+   ✅ Using Weighted BCE Loss
+🎯 Optimizer: Adam (lr=0.001) with CosineAnnealingLR
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/content/Melanoma-Dermoscopic-Prognosis/src/main.py", line 238, in <module>
+    main()
+  File "/content/Melanoma-Dermoscopic-Prognosis/src/main.py", line 199, in main
+    _, ckpt_path = train_model(
+                   ^^^^^^^^^^^^
+  File "/content/Melanoma-Dermoscopic-Prognosis/src/train.py", line 736, in train_model
+    train_loss = _train_epoch(
+                 ^^^^^^^^^^^^^
+  File "/content/Melanoma-Dermoscopic-Prognosis/src/train.py", line 913, in _train_epoch
+    loss_cls = criterion_cls(outputs["cls"], batch["label"].to(device))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/content/Melanoma-Dermoscopic-Prognosis/src/utils/losses.py", line 68, in forward
+    loss = F.binary_cross_entropy(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: binary_cross_entropy() got an unexpected keyword argument 'pos_weight'
