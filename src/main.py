@@ -47,7 +47,7 @@ def parse_args():
 	parser.add_argument("--dino_checkpoint", type=str, default="",
 		help="Path to domain-specific DINO checkpoint (e.g., dino_v3/outputs_dino/checkpoints/best.pt). "
 		     "If not provided, uses ImageNet pretrained ViT weights.")
-	parser.add_argument("--vit_arch", type=str, default="vit_b_16",
+	parser.add_argument("--vit_arch", type=str, default="vit_b_32",
 		choices=["vit_b_16", "vit_b_32", "vit_l_16", "vit_l_32"],
 		help="ViT architecture for DINO model")
 	parser.add_argument("--freeze_backbone_layers", type=int, default=7,
@@ -74,6 +74,8 @@ def parse_args():
 		help="Gamma parameter for Focal Loss (higher = more focus on hard examples). Range: 1.0-3.0")
 	parser.add_argument("--class_aware_augment", action="store_true",
 		help="Enable class-aware augmentation (strong augmentation for minority class MEL)")
+	parser.add_argument("--lr_scheduler", type=str, choices=["cosine", "step", "none"], default="cosine",
+		help="Learning rate scheduler: 'cosine' (CosineAnnealingLR), 'step' (StepLR), or 'none'")
 	parser.add_argument("--task", type=str, choices=["classification", "regression"], default="classification",
 		help="Single-task mode: 'classification' or 'regression'")
 	parser.add_argument("--multitask", action="store_true",
@@ -100,6 +102,8 @@ def parse_args():
 		help="Test set fraction")
 	parser.add_argument("--device", type=str, default="auto",
 		help="Device to use: 'cuda', 'cpu', or 'auto'")
+	# parser.add_argument("--patience", type=int, default=5,
+	# 	help="Early stopping patience (epochs without improvement)")                                              │                                                                   
 	
 	return parser.parse_args()
 
@@ -208,6 +212,7 @@ def main():
 			cls_loss_type=args.cls_loss_type,
 			class_aware_augment=args.class_aware_augment,
 			focal_gamma=args.focal_gamma,
+			lr_scheduler=args.lr_scheduler,
 		)
 		print(f"\n✓ Training complete! Best checkpoint: {ckpt_path}")
 	else:

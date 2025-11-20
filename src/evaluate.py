@@ -212,8 +212,11 @@ def evaluate_model(
 		print(f"\nRegression:")
 		print(f"  MAE:       {reg['mae']:.4f}")
 		print(f"  RMSE:      {reg['rmse']:.4f}")
+		print(f"  R²:        {reg['r2']:.4f}")
 		if "mae_ci_lower" in reg:
 			print(f"  MAE CI:    [{reg['mae_ci_lower']:.4f}, {reg['mae_ci_upper']:.4f}]")
+		if "r2_ci_lower" in reg:
+			print(f"  R² CI:     [{reg['r2_ci_lower']:.4f}, {reg['r2_ci_upper']:.4f}]")
 	
 	if "subgroups" in metrics:
 		print(f"\nSubgroup Analysis:")
@@ -225,6 +228,7 @@ def evaluate_model(
 						  f"n={sub_metrics.get('n_samples', 'N/A')}")
 				elif "regression" in sub_metrics or "mae" in sub_metrics:
 					print(f"    {value}: MAE={sub_metrics.get('mae', 'N/A'):.4f}, "
+						  f"R²={sub_metrics.get('r2', 'N/A'):.4f}, "
 						  f"n={sub_metrics.get('n_samples', 'N/A')}")
 	print("="*60 + "\n")
 	

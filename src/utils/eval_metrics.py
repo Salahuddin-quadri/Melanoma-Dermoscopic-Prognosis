@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Optional, Dict, List, Tuple, Any
 import numpy as np
-from sklearn.metrics import roc_auc_score, mean_absolute_error, mean_squared_error
+from sklearn.metrics import roc_auc_score, mean_absolute_error, mean_squared_error, r2_score
 import pandas as pd
 
 
@@ -205,7 +205,7 @@ def compute_regression_metrics(
 	"""
 	Compute comprehensive regression metrics.
 	
-	Includes: MAE, RMSE, and bootstrap CIs.
+	Includes: MAE, RMSE, R², and bootstrap CIs.
 	
 	Args:
 		y_true: True regression values, shape (N,)
@@ -217,10 +217,12 @@ def compute_regression_metrics(
 	"""
 	mae = float(mean_absolute_error(y_true, y_pred))
 	rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
+	r2 = float(r2_score(y_true, y_pred))
 	
 	metrics = {
 		"mae": mae,
 		"rmse": rmse,
+		"r2": r2,
 	}
 	
 	# Bootstrap CIs
@@ -232,6 +234,17 @@ def compute_regression_metrics(
 			metrics.update({
 				"mae_ci_lower": mae_lower,
 				"mae_ci_upper": mae_upper,
+			})
+		except Exception:
+			pass
+		
+		try:
+			_, r2_lower, r2_upper = bootstrap_confidence_interval(
+				r2_score, y_true, y_pred
+			)
+			metrics.update({
+				"r2_ci_lower": r2_lower,
+				"r2_ci_upper": r2_upper,
 			})
 		except Exception:
 			pass

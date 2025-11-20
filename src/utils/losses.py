@@ -39,11 +39,11 @@ class WeightedBCELoss(nn.Module):
 		super().__init__()
 		if pos_weight is not None:
 			if isinstance(pos_weight, float):
-				self.pos_weight = torch.tensor(pos_weight)
-			else:
-				self.pos_weight = pos_weight
+				pos_weight = torch.tensor(pos_weight)
+			# Register as buffer so it moves with the model to the correct device
+			self.register_buffer("pos_weight", pos_weight)
 		else:
-			self.pos_weight = None
+			self.register_buffer("pos_weight", None)
 		self.reduction = reduction
 	
 	def forward(self, predictions: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
@@ -138,11 +138,11 @@ class FocalLoss(nn.Module):
 	):
 		super().__init__()
 		if alpha is None:
-			self.alpha = None
+			self.register_buffer("alpha", None)
 		elif isinstance(alpha, (list, tuple)):
-			self.alpha = torch.tensor(alpha)
+			self.register_buffer("alpha", torch.tensor(alpha))
 		else:
-			self.alpha = torch.tensor([1.0 - alpha, alpha])  # [alpha_neg, alpha_pos]
+			self.register_buffer("alpha", torch.tensor([1.0 - alpha, alpha]))  # [alpha_neg, alpha_pos]
 		self.gamma = gamma
 		self.reduction = reduction
 	
@@ -172,8 +172,6 @@ class FocalLoss(nn.Module):
 		
 		# Apply alpha weighting if provided
 		if self.alpha is not None:
-			if self.alpha.device != predictions.device:
-				self.alpha = self.alpha.to(predictions.device)
 			alpha_t = self.alpha[0] * (1 - targets) + self.alpha[1] * targets
 			focal_weight = alpha_t * focal_weight
 		

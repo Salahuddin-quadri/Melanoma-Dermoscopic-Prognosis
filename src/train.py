@@ -338,14 +338,17 @@ References:
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
+import json
 
 import numpy as np
 import torch
 from sklearn.metrics import mean_absolute_error, roc_auc_score
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 # Support running as module or script
 try:
@@ -549,7 +552,8 @@ def train_model(
     focal_gamma: float = 2.0,
     num_workers: int = 4,
     learning_rate: float = 1e-3,
-    patience: int = 5,
+    patience: int = 15,
+    lr_scheduler: Optional[str] = "cosine",
 ) -> Tuple[Dict[str, float], str]:
     """
     Train hybrid vision-tabular model with advanced loss handling.
@@ -578,6 +582,7 @@ def train_model(
         num_workers: Number of DataLoader worker processes
         learning_rate: Initial learning rate for Adam optimizer
         patience: Early stopping patience (epochs without improvement)
+        lr_scheduler: Learning rate scheduler type ('cosine', 'step', or None)
         
     Returns:
         Tuple of (metrics_dict, checkpoint_path):
@@ -598,13 +603,33 @@ def train_model(
         ...     image_size=(384, 384),
         ...     cls_loss_type='focal',
         ...     class_aware_augment=True,
-        ...     num_workers=4
+        ...     num_workers=4,
+        ...     lr_scheduler='cosine'
         ... )
     """
-    # Setup output directory
-    checkpoint_dir = Path(output_dir) / "checkpoints"
+    # Setup YOLO-style output directory (train1, train2, etc.)
+    base_output_dir = Path(output_dir)
+    base_output_dir.mkdir(parents=True, exist_ok=True)
+    
+    train_dirs = [d for d in base_output_dir.iterdir() if d.is_dir() and d.name.startswith("train")]
+    train_numbers = []
+    for d in train_dirs:
+        try:
+            num = int(d.name.replace("train", ""))
+            train_numbers.append(num)
+        except ValueError:
+            pass
+    next_train_num = max(train_numbers) + 1 if train_numbers else 1
+    output_dir = base_output_dir / f"train{next_train_num}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Setup subdirectories
+    checkpoint_dir = output_dir / "checkpoints"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_path = str(checkpoint_dir / "best.pt")
+    
+    # Create log file path
+    log_file = output_dir / f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
     # Setup device
     if device is None:
@@ -668,7 +693,21 @@ def train_model(
         lr=learning_rate,
     )
     
-    print(f"🎯 Optimizer: Adam (lr={learning_rate})")
+    # Setup learning rate scheduler
+    scheduler = None
+    if lr_scheduler and lr_scheduler != "none":
+        if lr_scheduler == "cosine":
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, T_max=epochs, eta_min=learning_rate * 0.01
+            )
+            print(f"🎯 Optimizer: Adam (lr={learning_rate}) with CosineAnnealingLR")
+        elif lr_scheduler == "step":
+            scheduler = torch.optim.lr_scheduler.StepLR(
+                optimizer, step_size=epochs // 3, gamma=0.1
+            )
+            print(f"🎯 Optimizer: Adam (lr={learning_rate}) with StepLR")
+    else:
+        print(f"🎯 Optimizer: Adam (lr={learning_rate})")
 
     if class_aware_augment:
         print(f"✅ Class-aware augmentation enabled (strong aug for melanoma)")
@@ -676,6 +715,21 @@ def train_model(
     # Training loop
     best_val_metric = -1.0
     bad_epochs = 0
+    
+    # Training history for logging and visualization
+    training_history = {
+        "epoch": [],
+        "train_loss": [],
+        "val_metric": [],
+        "learning_rate": [],
+    }
+    if multitask:
+        training_history["val_auc"] = []
+        training_history["val_mae"] = []
+    elif task == "classification":
+        training_history["val_auc"] = []
+    else:
+        training_history["val_mae"] = []
 
     for epoch in range(1, epochs + 1):
         # Training phase
@@ -705,6 +759,21 @@ def train_model(
             epochs=epochs,
         )
 
+        # Update learning rate scheduler
+        current_lr = optimizer.param_groups[0]["lr"]
+        if scheduler is not None:
+            scheduler.step()
+        
+        # Record training history
+        training_history["epoch"].append(epoch)
+        training_history["train_loss"].append(train_loss)
+        training_history["val_metric"].append(val_metric)
+        training_history["learning_rate"].append(current_lr)
+        for key, value in val_stats.items():
+            if key not in training_history:
+                training_history[key] = []
+            training_history[key].append(value)
+        
         # Print epoch summary
         _print_epoch_summary(
             epoch=epoch,
@@ -713,7 +782,11 @@ def train_model(
             task=task,
             multitask=multitask,
             loss_alpha=loss_alpha,
+            current_lr=current_lr,
         )
+        
+        # Save training log
+        _save_training_log(training_history, log_file, epoch)
 
         # Check for improvement
         is_better = (best_val_metric < 0) or (val_metric > best_val_metric)
@@ -729,6 +802,12 @@ def train_model(
             if bad_epochs >= patience:
                 print(f"🛑 Early stopping triggered after {patience} epochs without improvement")
                 break
+    
+    # Save final training plots
+    _save_training_plots(training_history, output_dir)
+    
+    print(f"\n📁 Training outputs saved to: {output_dir}")
+    print(f"📝 Training log: {log_file}")
 
     return {"best_val_metric": float(best_val_metric)}, checkpoint_path
 
@@ -948,10 +1027,14 @@ def _print_epoch_summary(
     task: str,
     multitask: bool,
     loss_alpha: float,
+    current_lr: float = None,
 ) -> None:
     """Print formatted epoch summary."""
     summary = {"epoch": epoch, "train_loss": f"{train_loss:.4f}"}
     summary.update({k: f"{v:.4f}" for k, v in val_stats.items()})
+    
+    if current_lr is not None:
+        summary["lr"] = f"{current_lr:.6f}"
 
     if multitask:
         summary["loss_cls_weight"] = f"{loss_alpha:.2f}"
@@ -962,3 +1045,90 @@ def _print_epoch_summary(
     for key, value in summary.items():
         print(f"   {key:20s}: {value}")
     print("=" * 60)
+
+
+def _save_training_log(history: Dict, log_file: Path, epoch: int) -> None:
+    """Save training log to file (YOLO-style)."""
+    with open(log_file, "a") as f:
+        if epoch == 1:
+            # Write header
+            header = "epoch"
+            for key in history.keys():
+                if key != "epoch":
+                    header += f",{key}"
+            f.write(header + "\n")
+        
+        # Write current epoch data
+        row = str(history["epoch"][-1])
+        for key in history.keys():
+            if key != "epoch":
+                row += f",{history[key][-1]:.6f}"
+        f.write(row + "\n")
+
+
+def _save_training_plots(history: Dict, output_dir: Path) -> None:
+    """Save training plots (YOLO-style visuals)."""
+    try:
+        epochs = history["epoch"]
+        
+        # Create figure with subplots
+        n_plots = 2
+        if "val_auc" in history:
+            n_plots += 1
+        if "val_mae" in history:
+            n_plots += 1
+        
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        axes = axes.flatten()
+        
+        # Plot 1: Training Loss
+        axes[0].plot(epochs, history["train_loss"], "b-", label="Train Loss", linewidth=2)
+        axes[0].set_xlabel("Epoch")
+        axes[0].set_ylabel("Loss")
+        axes[0].set_title("Training Loss")
+        axes[0].grid(True, alpha=0.3)
+        axes[0].legend()
+        
+        # Plot 2: Learning Rate
+        if "learning_rate" in history:
+            axes[1].plot(epochs, history["learning_rate"], "g-", label="LR", linewidth=2)
+            axes[1].set_xlabel("Epoch")
+            axes[1].set_ylabel("Learning Rate")
+            axes[1].set_title("Learning Rate Schedule")
+            axes[1].grid(True, alpha=0.3)
+            axes[1].legend()
+            axes[1].set_yscale("log")
+        
+        # Plot 3: Validation Metrics
+        plot_idx = 2
+        if "val_auc" in history:
+            axes[plot_idx].plot(epochs, history["val_auc"], "r-", label="Val AUC", linewidth=2)
+            axes[plot_idx].set_xlabel("Epoch")
+            axes[plot_idx].set_ylabel("AUC")
+            axes[plot_idx].set_title("Validation AUC")
+            axes[plot_idx].grid(True, alpha=0.3)
+            axes[plot_idx].legend()
+            plot_idx += 1
+        
+        if "val_mae" in history:
+            axes[plot_idx].plot(epochs, history["val_mae"], "m-", label="Val MAE", linewidth=2)
+            axes[plot_idx].set_xlabel("Epoch")
+            axes[plot_idx].set_ylabel("MAE")
+            axes[plot_idx].set_title("Validation MAE")
+            axes[plot_idx].grid(True, alpha=0.3)
+            axes[plot_idx].legend()
+            plot_idx += 1
+        
+        # Hide unused subplots
+        for i in range(plot_idx, len(axes)):
+            axes[i].axis("off")
+        
+        plt.tight_layout()
+        plot_path = output_dir / "training_curves.png"
+        plt.savefig(plot_path, dpi=150, bbox_inches="tight")
+        plt.close()
+        
+        print(f"📊 Training plots saved to: {plot_path}")
+        
+    except Exception as e:
+        print(f"⚠️  Warning: Could not save training plots: {e}")
