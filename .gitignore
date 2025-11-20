@@ -17,3 +17,4 @@ src\__pycache__\
 *.pyc
 src\models\__pycache__
 error.txt
+data.zip
