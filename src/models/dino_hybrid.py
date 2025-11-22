@@ -1,11 +1,9 @@
 """
-DINO-based Hybrid Model for Melanoma Prognosis
+DINO-based Model for Melanoma Prognosis
 
-This module implements a dual-head model combining:
+This module implements a dual-head model using:
 1. Domain-specific DINO ViT backbone (pre-trained on 14K dermoscopic images)
-2. Clinical feature encoder (MLP over structured data)
-3. Cross-attention fusion mechanism
-4. Dual prediction heads: classification (malignant/benign) and prognosis (Breslow thickness)
+2. Dual prediction heads: classification (malignant/benign) and prognosis (Breslow thickness)
 
 The model is designed for fine-tuning on a smaller labeled dataset (1000 images)
 while leveraging the rich representations learned from domain-specific SSL.
@@ -14,13 +12,11 @@ while leveraging the rich representations learned from domain-specific SSL.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Optional
 
 import torch
 import torch.nn as nn
 import torchvision.models as tvm
-
-from .fusion import CrossAttentionFusion, SimpleConcatFusion
 
 
 def _get_vit_embed_dim(arch: str) -> int:
@@ -205,48 +201,41 @@ def _load_dino_checkpoint(
 		return False
 
 
-class DinoHybrid(nn.Module):
+class DinoModel(nn.Module):
 	"""
-	Dual-head hybrid model combining DINO ViT features with clinical data.
+	Dual-head model using DINO ViT backbone for image-only input.
 	
 	Architecture:
 	1. Image branch: DINO ViT backbone (domain-specific or ImageNet pretrained)
-	2. Clinical branch: MLP encoder for structured features
-	3. Fusion: Cross-attention mechanism (or simple concatenation)
-	4. Heads: Classification (binary) and Regression (thickness)
+	2. Feature projection: MLP to project ViT features to hidden dimension
+	3. Heads: Classification (binary) and Regression (thickness)
 	
 	The model supports fine-tuning from domain-specific DINO checkpoints.
 	"""
 	
 	def __init__(
 		self,
-		num_structured_features: int,
 		task: str = "classification",
 		multitask: bool = False,
 		arch: str = "vit_b_16",
 		pretrained: bool = True,
 		dino_checkpoint: Optional[str] = None,
 		use_tokens: bool = False,
-		fusion_type: str = "cross_attention",
-		fusion_hidden: int = 256,
-		num_clin_tokens: int = 4,
+		hidden_dim: int = 256,
 		dropout: float = 0.1,
 		freeze_backbone_layers: int = 0,
 	):
 		"""
-		Initialize DINO hybrid model.
+		Initialize DINO model.
 		
 		Args:
-			num_structured_features: Number of clinical/structured features
 			task: "classification" or "regression" (ignored if multitask=True)
 			multitask: If True, use dual heads (classification + regression)
 			arch: ViT architecture name
 			pretrained: Use ImageNet pretrained weights (if dino_checkpoint not provided)
 			dino_checkpoint: Path to domain-specific DINO checkpoint
 			use_tokens: If True, return full token sequence; if False, CLS only
-			fusion_type: "cross_attention" or "concat"
-			fusion_hidden: Hidden dimension for fusion module
-			num_clin_tokens: Number of learned clinical tokens for cross-attention
+			hidden_dim: Hidden dimension for feature projection and heads
 			dropout: Dropout rate
 			freeze_backbone_layers: Number of encoder layers to freeze (0 = all trainable)
 		"""
@@ -276,40 +265,22 @@ class DinoHybrid(nn.Module):
 		if freeze_backbone_layers > 0:
 			self._freeze_layers(freeze_backbone_layers)
 		
-		# Clinical feature encoder (simple MLP)
-		self.clinical_encoder = nn.Sequential(
-			nn.Linear(num_structured_features, 64),
-			nn.ReLU(),
+		# Feature projection: ViT features -> hidden dimension
+		self.feature_proj = nn.Sequential(
+			nn.Linear(embed_dim, hidden_dim),
+			nn.GELU(),
 			nn.Dropout(dropout),
-			nn.Linear(64, 32),
+			nn.Linear(hidden_dim, hidden_dim),
+			nn.GELU(),
+			nn.Dropout(dropout),
 		)
-		clin_dim = 32
-		
-		# Fusion module
-		if fusion_type == "cross_attention":
-			self.fusion = CrossAttentionFusion(
-				img_dim=embed_dim,
-				clin_dim=clin_dim,
-				num_clin_tokens=num_clin_tokens,
-				hidden=fusion_hidden,
-				dropout=dropout,
-			)
-		elif fusion_type == "concat":
-			self.fusion = SimpleConcatFusion(
-				img_dim=embed_dim,
-				clin_dim=clin_dim,
-				hidden=fusion_hidden,
-				dropout=dropout,
-			)
-		else:
-			raise ValueError(f"Unknown fusion_type: {fusion_type}")
 		
 		# Prediction heads
 		self.cls_head = nn.Sequential(
-			nn.Linear(fusion_hidden, 1),
+			nn.Linear(hidden_dim, 1),
 			nn.Sigmoid(),  # For binary classification
 		)
-		self.reg_head = nn.Linear(fusion_hidden, 1)  # For regression (Breslow thickness)
+		self.reg_head = nn.Linear(hidden_dim, 1)  # For regression (Breslow thickness)
 	
 	def _freeze_layers(self, num_layers: int):
 		"""Freeze the first N encoder layers for transfer learning."""
@@ -325,14 +296,12 @@ class DinoHybrid(nn.Module):
 	def forward(
 		self,
 		image_tensor: torch.Tensor,
-		structured_tensor: torch.Tensor,
 	) -> torch.Tensor | dict[str, torch.Tensor]:
 		"""
 		Forward pass through the model.
 		
 		Args:
 			image_tensor: Batch of images, shape (B, C, H, W)
-			structured_tensor: Batch of clinical features, shape (B, F)
 		
 		Returns:
 			- If multitask=True: dict with "cls" and "reg" keys
@@ -342,55 +311,53 @@ class DinoHybrid(nn.Module):
 		# Extract image features from DINO backbone
 		img_features = self.backbone(image_tensor)  # (B, D) or (B, N, D)
 		
-		# Encode clinical features
-		clin_features = self.clinical_encoder(structured_tensor)  # (B, clin_dim)
+		# Handle full token sequence if needed
+		if img_features.dim() == 3:
+			# Full token sequence: mean pool over spatial/token dimension
+			img_features = img_features.mean(dim=1)  # (B, D)
 		
-		# Fuse image and clinical features
-		fused_features = self.fusion(img_features, clin_features)  # (B, fusion_hidden)
+		# Project features to hidden dimension
+		projected_features = self.feature_proj(img_features)  # (B, hidden_dim)
 		
 		# Apply prediction heads
 		if self.multitask:
-			cls_pred = self.cls_head(fused_features).squeeze(1)  # (B,)
-			reg_pred = self.reg_head(fused_features).squeeze(1)  # (B,)
+			cls_pred = self.cls_head(projected_features).squeeze(1)  # (B,)
+			reg_pred = self.reg_head(projected_features).squeeze(1)  # (B,)
 			return {"cls": cls_pred, "reg": reg_pred}
 		elif self.task == "classification":
-			return self.cls_head(fused_features).squeeze(1)  # (B,)
+			return self.cls_head(projected_features).squeeze(1)  # (B,)
 		else:  # regression
-			return self.reg_head(fused_features).squeeze(1)  # (B,)
+			return self.reg_head(projected_features).squeeze(1)  # (B,)
 
 
 def create_dino_hybrid_model(
-	num_structured_features: int,
 	task: str = "classification",
 	multitask: bool = False,
 	arch: str = "vit_b_16",
 	pretrained: bool = True,
 	dino_checkpoint: Optional[str] = None,
 	use_tokens: bool = False,
-	fusion_type: str = "cross_attention",
-	fusion_hidden: int = 256,
-	num_clin_tokens: int = 4,
+	hidden_dim: int = 256,
 	dropout: float = 0.1,
 	freeze_backbone_layers: int = 0,
 ) -> nn.Module:
 	"""
-	Factory function to create a DINO hybrid model.
+	Factory function to create a DINO model.
 	
 	This is the main entry point for creating the model with default or custom
 	configuration. Used by the training pipeline.
+	
+	Note: The function name is kept as "create_dino_hybrid_model" for backward
+	compatibility, but the model no longer uses clinical features.
 	"""
-	return DinoHybrid(
-		num_structured_features=num_structured_features,
+	return DinoModel(
 		task=task,
 		multitask=multitask,
 		arch=arch,
 		pretrained=pretrained,
 		dino_checkpoint=dino_checkpoint,
 		use_tokens=use_tokens,
-		fusion_type=fusion_type,
-		fusion_hidden=fusion_hidden,
-		num_clin_tokens=num_clin_tokens,
+		hidden_dim=hidden_dim,
 		dropout=dropout,
 		freeze_backbone_layers=freeze_backbone_layers,
 	)
-

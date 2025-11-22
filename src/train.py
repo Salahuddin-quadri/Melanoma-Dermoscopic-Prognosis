@@ -365,14 +365,13 @@ except ImportError:
 
 class FrameDataset(Dataset):
     """
-    Multimodal dataset for dermoscopic images + clinical features.
+    Dataset for dermoscopic images only.
     
     Supports class-aware augmentation where minority class (melanoma) receives
     stronger augmentation to address dataset imbalance.
     
     Attributes:
         image_paths: List of paths to dermoscopic images
-        structured: Clinical feature matrix (n_samples, n_features)
         y_cls: Classification labels (0=benign, 1=melanoma)
         y_reg: Regression targets (e.g., Breslow thickness)
         y_single: Unified target for single-task learning
@@ -385,7 +384,6 @@ class FrameDataset(Dataset):
     def __init__(
         self,
         df,
-        feature_cols: Iterable[str],
         image_size: Tuple[int, int] = (384, 384),
         augment: bool = False,
         class_aware_augment: bool = False,
@@ -399,15 +397,12 @@ class FrameDataset(Dataset):
                 - 'label': Classification target (optional)
                 - 'thickness': Regression target (optional)
                 - 'target': Unified target for single-task (optional)
-                - feature_cols: Clinical features
-            feature_cols: Names of clinical feature columns
             image_size: Target (width, height) for preprocessing
             augment: Whether to apply data augmentation
             class_aware_augment: If True, apply strong aug to minority class
         """
-        # Extract paths and features
+        # Extract paths
         self.image_paths = df["image_path"].tolist()
-        self.structured = df[list(feature_cols)].to_numpy(dtype=np.float32)
         
         # Extract targets (may be None if not present)
         self.y_cls = (
@@ -454,7 +449,6 @@ class FrameDataset(Dataset):
         Returns:
             Dictionary containing:
                 - 'img': Image tensor, shape (3, H, W)
-                - 'tab': Clinical features, shape (n_features,)
                 - 'label': Classification target (if available)
                 - 'thickness': Regression target (if available)
                 - 'target': Unified target (if available)
@@ -476,10 +470,9 @@ class FrameDataset(Dataset):
 
         # Convert to PyTorch tensor: (H, W, C) -> (C, H, W)
         img = torch.from_numpy(np.transpose(img, (2, 0, 1)))
-        tab = torch.from_numpy(self.structured[idx])
 
         # Build output dictionary
-        out = {"img": img, "tab": tab}
+        out = {"img": img}
 
         # Add targets if available
         if self.y_single is not None:
@@ -503,7 +496,7 @@ class FrameDataset(Dataset):
 
 def custom_collate_fn(batch: List[Dict[str, torch.Tensor]]) -> Dict[str, torch.Tensor]:
     """
-    Collate function for DataLoader with multimodal data.
+    Collate function for DataLoader with image data.
     
     This function must be defined at module level (not nested) to support
     multi-worker DataLoaders on Windows.
@@ -514,10 +507,9 @@ def custom_collate_fn(batch: List[Dict[str, torch.Tensor]]) -> Dict[str, torch.T
     Returns:
         Batched dictionary with stacked tensors
     """
-    # Stack image and tabular data
+    # Stack image data
     imgs = torch.stack([b["img"] for b in batch])
-    tabs = torch.stack([b["tab"] for b in batch])
-    out = {"imgs": imgs, "tabs": tabs}
+    out = {"imgs": imgs}
 
     # Stack optional targets if present
     if "target" in batch[0]:
@@ -538,7 +530,6 @@ def train_model(
     model: torch.nn.Module,
     train_df,
     val_df,
-    feature_cols: Iterable[str],
     batch_size: int = 32,
     epochs: int = 20,
     image_size: Tuple[int, int] = (384, 384),
@@ -556,13 +547,12 @@ def train_model(
     lr_scheduler: Optional[str] = "cosine",
 ) -> Tuple[Dict[str, float], str]:
     """
-    Train hybrid vision-tabular model with advanced loss handling.
+    Train image-only model with advanced loss handling.
     
     Args:
-        model: PyTorch model to train
+        model: PyTorch model to train (image-only input, dual-head output)
         train_df: Training DataFrame with required columns
         val_df: Validation DataFrame with required columns
-        feature_cols: List of clinical feature column names
         batch_size: Mini-batch size for training
         epochs: Maximum number of training epochs
         image_size: Target image dimensions (width, height)
@@ -594,10 +584,9 @@ def train_model(
         
     Example:
         >>> results, ckpt_path = train_model(
-        ...     model=hybrid_model,
+        ...     model=model,
         ...     train_df=train_df,
         ...     val_df=val_df,
-        ...     feature_cols=['age', 'sex', 'site'],
         ...     batch_size=32,
         ...     epochs=50,
         ...     image_size=(384, 384),
@@ -640,14 +629,12 @@ def train_model(
     # Create datasets
     train_ds = FrameDataset(
         train_df,
-        feature_cols,
         image_size,
         augment=True,
         class_aware_augment=class_aware_augment,
     )
     val_ds = FrameDataset(
         val_df, 
-        feature_cols, 
         image_size, 
         augment=False
     )
@@ -902,11 +889,10 @@ def _train_epoch(
 
     for batch in progress_bar:
         imgs = batch["imgs"].to(device)
-        tabs = batch["tabs"].to(device)
 
         # Forward pass
         optimizer.zero_grad()
-        outputs = model(imgs, tabs)
+        outputs = model(imgs)
 
         # Compute loss
         if multitask:
@@ -954,8 +940,7 @@ def _validate_epoch(
     with torch.no_grad():
         for batch in progress_bar:
             imgs = batch["imgs"].to(device)
-            tabs = batch["tabs"].to(device)
-            outputs = model(imgs, tabs)
+            outputs = model(imgs)
 
             if multitask:
                 val_outputs.append({

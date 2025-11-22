@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Tuple, Optional, List
+from typing import Tuple, Optional, List
 import pandas as pd
 import numpy as np
 import torch
@@ -23,9 +23,10 @@ except ImportError:
 
 
 class EvalDataset(Dataset):
-	def __init__(self, df, feature_cols: Iterable[str], image_size: Tuple[int, int] = (224, 224)):
+	"""Dataset for image-only evaluation."""
+	
+	def __init__(self, df, image_size: Tuple[int, int] = (224, 224)):
 		self.image_paths = df["image_path"].tolist()
-		self.structured = df[list(feature_cols)].to_numpy(dtype=np.float32)
 		self.has_label = "label" in df.columns
 		self.has_thickness = "thickness" in df.columns
 		self.labels = df["label"].to_numpy(dtype=np.float32) if self.has_label else None
@@ -38,8 +39,7 @@ class EvalDataset(Dataset):
 	def __getitem__(self, idx):
 		img = preprocess_image(self.image_paths[idx], size=self.image_size)
 		img = torch.from_numpy(np.transpose(img, (2, 0, 1)))
-		tab = torch.from_numpy(self.structured[idx])
-		out = {"img": img, "tab": tab}
+		out = {"img": img}
 		if self.has_label:
 			out["label"] = torch.tensor(self.labels[idx], dtype=torch.float32)
 		if self.has_thickness:
@@ -50,7 +50,6 @@ class EvalDataset(Dataset):
 def evaluate_model(
 	model: torch.nn.Module,
 	test_df,
-	feature_cols: Iterable[str],
 	weights_path: str | None = None,
 	batch_size: int = 32,
 	image_size: Tuple[int, int] = (224, 224),
@@ -70,9 +69,8 @@ def evaluate_model(
 	- Subgroup analysis for fairness assessment (if subgroup columns provided)
 	
 	Args:
-		model: Model to evaluate
+		model: Model to evaluate (image-only input)
 		test_df: Test dataframe (must contain 'label' and/or 'thickness')
-		feature_cols: List of clinical feature column names
 		weights_path: Path to model checkpoint
 		batch_size: Batch size for evaluation
 		image_size: Image dimensions
@@ -98,7 +96,7 @@ def evaluate_model(
 		print(f"✓ Loaded weights from {weights_path}")
 
 	# Prepare dataset and dataloader
-	ds = EvalDataset(test_df, feature_cols, image_size)
+	ds = EvalDataset(test_df, image_size)
 	loader = DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=True)
 
 	# Collect predictions
@@ -109,8 +107,7 @@ def evaluate_model(
 	with torch.no_grad():
 		for batch in loader:
 			imgs = batch["img"].to(device)
-			tabs = batch["tab"].to(device)
-			outputs = model(imgs, tabs)
+			outputs = model(imgs)
 			
 			if isinstance(outputs, dict):
 				# Multitask model
@@ -233,5 +230,3 @@ def evaluate_model(
 	print("="*60 + "\n")
 	
 	return metrics
-
-
