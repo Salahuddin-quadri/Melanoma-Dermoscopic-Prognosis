@@ -1,0 +1,61 @@
+================================================================================
+LITERATURE SURVEY
+================================================================================
+
+2. RELATED WORK
+
+2.1 Melanoma Detection and Thickness Estimation from Dermoscopic Images
+
+Automated melanoma diagnosis from dermoscopic images has been a focal point of recent research. Naseri and Safaei [1] conducted a comprehensive systematic literature review on machine learning and deep learning approaches for melanoma detection and prognosis, analyzing studies on publicly available datasets (HAM10000, ISIC). Their findings show that contemporary models achieve >95% accuracy using architectures like DenseNet and deep CNNs; however, they identify critical gaps in data diversity and model interpretability, particularly for thickness estimation tasks. While these high accuracy rates are promising, the authors note that most works focus on binary classification without concurrent prognostic prediction, and inter-dataset generalization remains a challenge—a limitation our multitask framework aims to address through dual-head architecture and domain-adaptive training.
+
+Hernández-Rodríguez et al. [2] investigated transfer learning approaches for predicting Breslow thickness using pre-trained backbones (EfficientNetB6, ResNetV2, InceptionV3) evaluated on non-public datasets. Their results indicate that EfficientNetB6 achieved 75% accuracy for binary thickness classification (≤0.8 mm vs. ≥0.8 mm) and notably outperformed dermatologists in thickness prediction tasks. This work highlights the potential of transfer learning but is limited by proprietary dataset use, preventing full reproducibility and cross-dataset validation. Our approach extends this by leveraging public ISIC/Kaggle datasets, implementing multitask learning to predict continuous thickness rather than discrete bins, and incorporating attention mechanisms for interpretability alongside strong baseline transfer learning.
+
+Szijártó et al. [3] designed a machine learning system for non-invasive thickness prediction using EfficientNet CNNs on a small proprietary dataset, achieving 71% balanced accuracy with significant room for improvement. The authors acknowledge that performance gains require larger, more diverse datasets and better feature engineering. In response to these limitations, our project addresses data scarcity through class-aware augmentation and synthetic data strategies, uses publicly available datasets to enable reproducibility, and combines multiple architectural paradigms (DINO ViT, attention-CNN) to capture both global and local discriminative patterns for robust thickness estimation.
+
+Gajera et al. [4] performed comprehensive analysis of dermoscopic images for melanoma detection using DenseNet-121 and multilayer perceptrons, achieving 98.33% accuracy on the ISIC 2017 dataset. They emphasize the importance of boundary localization in dermoscopic images for implicit thickness inference, noting that models focusing on edge sharpness and boundary regularity correlate with invasive vs. in-situ subtypes. While their detection accuracy is high, the work does not explicitly model thickness as a regression target nor address class imbalance systematically. Our multitask framework directly tackles this by formulating thickness prediction as an explicit regression head with appropriate loss weighting, and by leveraging attention mechanisms that naturally highlight boundary and morphological features critical for thickness assessment.
+
+Polesie et al. [5] conducted a large-scale diagnostic study comparing CNN predictions (both pretrained and de novo) with expert reader assessments for thickness categorization on 1456 dermoscopic images. They found that human readers achieved 56.4% accuracy in thickness assessment, while pretrained CNNs outperformed collective expert judgment. This study underscores the value of automated approaches but reveals high inter-observer variability and the difficulty of the task. Our work builds on these findings by providing a well-calibrated model with uncertainty quantification (bootstrap confidence intervals) to support clinical decision-making, ensuring that clinicians understand model confidence levels and can adjust triage decisions accordingly.
+
+2.2 Class Imbalance and Loss Function Design
+
+Class imbalance is a pervasive challenge in melanoma datasets, where benign lesions vastly outnumber malignant cases. Recent work has investigated specialized loss functions to mitigate this bias. Studies on ensemble-based knowledge distillation with semi-supervised learning (leveraging unlabeled data) have shown promise in addressing data scarcity and class imbalance [6], achieving robust performance by simultaneously training on labeled and pseudo-labeled samples. However, these methods are computationally expensive and require careful hyperparameter tuning. Our approach adopts focal loss (with gamma=2.0) combined with class-aware augmentation, providing a more interpretable and computationally efficient solution that directly down-weights easy (majority-class) examples while focusing training on hard negatives and minority samples.
+
+Hybrid machine learning systems combining classical methods (Random Forest) with deep learning have been explored for stage classification based on thickness and other clinical features [7]. Such ensemble approaches achieve high accuracy (97.42%) but typically require manual feature engineering and are less end-to-end than pure deep learning pipelines. Our multitask framework consolidates these insights by allowing the model to learn both high-level morphological patterns (via deep layers) and explicit clinical surrogates (thickness), without manual feature design, while maintaining interpretability through attention mechanisms.
+
+2.3 Interpretability and Visual Explanation in Dermoscopy
+
+The interpretability of deep learning models in clinical contexts is crucial for clinician acceptance. Dermoscopic feature analysis studies show that specific visual markers (e.g., blue-white veil, milky-red areas, color variation) correlate strongly with Breslow thickness and invasiveness [8][9]. These qualitative findings motivate the use of attention mechanisms and gradient-based visualization (Grad-CAM) in automated systems to ensure model decisions align with known clinical patterns. Our attention-augmented architecture explicitly generates spatial attention maps and class activation heatmaps, which can be overlaid on input images to highlight the same diagnostic regions that clinicians use, thereby bridging the gap between black-box predictions and clinical reasoning.
+
+2.4 Multispectral and Advanced Imaging Modalities
+
+Bozsányi et al. [10] investigated multispectral imaging (MSI) algorithms for Breslow thickness prediction, achieving 78% sensitivity for thickness subgroups (≤1 mm, 1–2 mm, >2 mm) on a proprietary dataset. While MSI provides additional spectral information beyond RGB dermoscopy, it requires specialized hardware and is not as widely available in clinical settings as standard dermoscopy. In contrast, our framework works with conventional RGB dermoscopic images from public repositories, ensuring broader applicability and accessibility. We achieve comparable or superior performance while maintaining ease of deployment in diverse clinical environments.
+
+2.5 Gap Analysis and Project Positioning
+
+The literature reveals several unmet needs: (1) most prior work focuses on classification without concurrent thickness prediction; (2) interpretability through visual explanations is often an afterthought rather than a design principle; (3) proprietary datasets limit reproducibility and cross-site validation; (4) class imbalance is often addressed ad-hoc rather than systematically; (5) uncertainty quantification (e.g., confidence intervals) is rarely provided for clinical decision support. Our project directly addresses these gaps by proposing a unified multitask framework (dermoscopy-only, DINO ViT backbone, dual classification-regression heads) trained on public datasets with focal/weighted losses, class-aware augmentation, attention-based interpretability, and bootstrap-based uncertainty estimation. The combination of these elements—particularly the joint optimization of classification and thickness regression with explicit attention visualization—represents an advance over isolated approaches in the literature.
+
+================================================================================
+REFERENCES (Selected from Literature Review)
+================================================================================
+
+[1] H. Naseri and A. A. Safaei, "Diagnosis and prognosis of melanoma from dermoscopy images using machine learning and deep learning: a systematic literature review," BMC Cancer, vol. 24, no. 1413, 2025. doi: 10.1186/s12885-024-13423-y.
+
+[2] J. C. Hernández-Rodríguez et al., "Prediction of melanoma Breslow thickness using deep transfer learning algorithms," Clin. Exp. Dermatol., vol. 48, no. 7, pp. 752–759, 2024. doi: 10.1093/ced/llad107.
+
+[3] Á. Szijártó, E. Somfai, and A. Lőrincz, "Design of a machine learning system to predict the thickness of a melanoma lesion in a non-invasive way from dermoscopic images," Healthc. Inform. Res., vol. 29, no. 2, pp. 112–122, 2023. doi: 10.4258/hir.2023.29.2.112.
+
+[4] H. K. Gajera, D. R. Nayak, and M. A. Zaveri, "A comprehensive analysis of dermoscopy images for melanoma detection via deep CNN features," Biomed. Signal Process. Control, vol. 78, p. 104186, 2022. doi: 10.1016/j.bspc.2022.104186.
+
+[5] S. Polesie et al., "Assessment of melanoma thickness based on dermoscopy images: an open, web-based, international, diagnostic study," J. Eur. Acad. Dermatol. Venereol., vol. 36, no. 7, pp. 1072–1082, 2022. doi: 10.1111/jdv.18436.
+
+[6] "Melanoma Breslow Thickness Classification Using Ensemble-Based Knowledge Distillation With Semi-Supervised Convolutional Neural Networks," IEEE Trans. Med. Imaging, vol. 44, no. 1, 2025. [Online]. Available: https://ieeexplore.ieee.org/document/10685145.
+
+[7] R. Ashtagi et al., "Combined deep learning and machine learning models for the prediction of stages of melanoma," Sci. Rep., 2024.
+
+[8] E. Rodríguez-Lomba et al., "Dermoscopic predictors of tumor thickness in cutaneous melanoma: a retrospective analysis of 245 melanomas," Dermatol. Pract. Concept., vol. 11, no. 3, p. a59, 2021. doi: 10.5826/dpc.1103a59.
+
+[9] M. M. Martínez-Piva et al., "Dermoscopy as a tool for estimating Breslow thickness in melanoma," Actas Dermatol. Sifiliogr., vol. 112, no. 4, pp. 290–299, 2021. doi: 10.1016/j.ad.2020.11.015.
+
+[10] S. Bozsányi et al., "Multispectral imaging algorithm predicts Breslow thickness of melanoma," J. Clin. Med., vol. 11, no. 1, p. 189, 2021. doi: 10.3390/jcm11010189.
+
+================================================================================

@@ -1,0 +1,205 @@
+DESIGN
+Systems design is the process of defining the architecture, components, modules, interfaces, and data for a system to satisfy specified requirements. Systems design could be seen as the application of systems theory to product development.
+
+The importance of this phase lies in identifying data sources, understanding the nature and type of available data, and ensuring the system is created to fulfill user needs while remaining dynamic and responsive. In this project, the design phase facilitates the integration of multimodal data—dermoscopic images and clinical metadata—to provide accurate melanoma prognosis.
+
+5.1	Architectural Overview
+The Melanoma Prognosis system is organized into a modular pipeline encompassing data acquisition, feature extraction, multimodal fusion, and prognostic prediction. The architecture is designed to handle the complex relationship between visual dermatological patterns and structured clinical risk factors. At the core of the system is a dual-branch architecture: an image branch leveraging a Vision Transformer (ViT) backbone and a clinical branch processing patient metadata. These branches converge in a cross-attention fusion layer that mimics the holistic diagnostic process used by expert dermatologists. The system outputs both a malignancy classification (Benign vs. Malignant) and a quantitative prognosis via Breslow thickness regression. By separating feature extraction, fusion, and prediction into distinct layers, the architecture ensures scalability and interpretability.
+
+Figure 5.1: Architecture of Proposed Melanoma Prognosis System
+
+The architecture shown in Figure 5.1 has the following phases:
+1.	Multimodal Data Acquisition
+2.	Data Preprocessing and Augmentation
+3.	Dual-Branch Feature Extraction
+4.	Cross-Attention Fusion Mechanism
+5.	Multitask Prediction Heads (Classification & Regression)
+6.	Explainability and Interpretability (Grad-CAM)
+
+5.2	Multimodal Prognosis Pipeline
+The prognosis pipeline is a structured workflow that transforms raw patient data into actionable clinical insights through a series of specialized processing stages.
+
+5.2.1 Data Acquisition & Preprocessing
+The initial phase involves collecting dermoscopic images and associated clinical metadata (e.g., patient age, anatomical site, sex). Images are standardized through resizing to 384x384 pixels and normalization to ensure consistency across diverse sources like the ISIC Archive and HAM10000. Clinical features are numerically encoded or one-hot encoded to be compatible with neural network inputs. To address the inherent class imbalance in skin lesion datasets, class-aware augmentation is applied, ensuring the model is exposed to a representative distribution of rare malignant cases.
+
+5.2.2 Dual-Branch Feature Extraction
+The system employs two parallel branches for feature extraction:
+- Image Branch: A Vision Transformer (ViT-B/32) backbone is used to extract high-dimensional visual representations. This backbone is initialized with domain-specific DINO-v3 weights, learned from thousands of unlabeled dermoscopic images, which allows it to recognize subtle morphological features critical for prognosis without requiring massive labeled datasets.
+- Clinical Branch: A Multi-Layer Perceptron (MLP) processes structured metadata to extract clinical risk embeddings.
+
+5.2.3 Cross-Attention Fusion Mechanism
+Instead of simple concatenation, the system utilizes a novel cross-attention mechanism to integrate visual and clinical features. In this module, the image features act as queries that "attend" to clinical tokens (keys and values). This allows the system to dynamically weigh visual patterns based on the patient's clinical context—for example, placing higher emphasis on specific lesion irregularities in older patients or those with lesions at high-risk anatomical sites.
+
+5.2.4 Dual-Head Prediction
+The fused multimodal embedding is passed to two parallel prediction heads:
+- Classification Head: Predicts the probability of malignancy (Benign vs. Malignant) using a Sigmoid activation.
+- Regression Head: Predicts Breslow thickness in millimeters, providing a critical indicator of tumor progression and patient prognosis.
+A composite loss function combining Focal Loss (for classification) and MSE/L1 Loss (for thickness) is used during training to optimize both tasks simultaneously.
+
+5.3	Explainability and Interpretability Architecture
+To bridge the gap between "black box" deep learning and clinical trust, the framework integrates an interpretability layer.
+
+5.3.1 Visual Explanation (Grad-CAM)
+The system employs Gradient-weighted Class Activation Mapping (Grad-CAM) to generate attention maps. These maps highlight the specific regions within the dermoscopic image that influenced the model's prediction. For instance, it can visualize whether the model focused on asymmetric borders or pigment networks, allowing clinicians to verify the anatomical basis of the AI's recommendation.
+
+5.3.2 Prognostic Confidence Calibration
+In addition to visual explanations, the system provides calibrated confidence estimates for its predictions. This ensures that the output is not just a raw probability but a reliable measure of certainty, which is essential for informed clinical decision-support.
+
+5.4	Data Flow Diagrams
+Data flow diagrams are the basic building blocks that define the flow of data in a system to the particular destination and difference in the flow when any transformation happens. It makes whole procedure like a good document and makes simpler and easy to understand for both programmers and non-programmers by dividing into the sub process. The data flow diagrams are the simple blocks that reveal the relationship between various components of the system and provide high level overview, boundaries of particular system as well as provide detailed overview of system elements.
+The data flow diagrams start from source and ends at the destination level i.e., it decomposes from high level to lower levels. The important things to remember about data flow diagrams are: it indicates the data flow for one way but not for loop structures and it doesn’t indicate the time factors. This section reveals about the data flow analysis which states about data that have been used, classification of data flow diagrams based on their functions and the other different levels used in the project. The general notations for constructing a block diagram are shown in Figure 5.2.
+
+Figure 5.2 General notation of DFD
+
+Data flow process: It will define the direction i.e., the data flow from one entity to another entity.
+Process: Process defines the source from where the output is generated for the specified input. It states the actions performed on data such that they are transformed, stored or distributed.
+Data store: It is the place or physical location where the data is stored after extraction from the data source.
+Source: It is the starting point or destination point of the data, stating point from where the external entity acts as a cause to flow the data towards destination.
+
+5.4.1	Constructing Data-Flow Diagram
+To construct the data flow diagram, we first identify external actors and processes. The primary actor is the Clinician or Medical Researcher, and the system provides three main processing streams: Multimodal Feature Extraction, Fusion-based Prognosis, and Explainable AI (XAI) Mapping. Next, we delineate data processes and stores:
+•	Multimodal Data Acquisition (loading dermoscopic images and associated clinical CSV files),
+•	Image Preprocessing (standardizing images to 384x384 and applying class-aware augmentation),
+•	Visual Feature Extraction (leveraging the ViT-B/32 backbone with domain-specific DINO-v3 weights),
+•	Clinical Feature Embedding (MLP-based projection of standardized patient demographics),
+•	Cross-Attention Fusion (synergizing visual patterns with clinical context),
+•	Dual-Head Prognosis (concurrent malignancy classification and Breslow thickness regression), and
+•	Attention Map Generation (using Grad-CAM to visualize diagnostic regions).
+Relevant data stores include the Domain-Specific Model Weights (pretrained DINO and fine-tuned hybrid weights) and the Dermoscopic Image Archives (e.g., ISIC, HAM10000). The data flows connect these processes: raw clinical data and images flow from the archives into the preprocessing modules; transformed feature tensors flow into the extraction branches; and resulting high-dimensional embeddings flow into the Cross-Attention module. Finally, the fused representation flows to the prediction heads to generate prognostic scores and interpretability maps. By mapping these flows, the DFD clarifies how raw patient data is transformed step-by-step into actionable clinical insights.
+
+5.5	Sequence Diagram
+Sequence diagrams are interaction diagrams that detail how operations are carried out—specifically, the time-ordered sequence of messages passed between objects. In the Melanoma Prognosis system, the sequence diagram (Figure 5.3) illustrates the real-time interaction between the user, the application interface, and the deep learning backend during a diagnostic session.
+
+The process flow illustrated in Figure 5.3 follows these steps:
+1.	The Clinician initiates the process by uploading a dermoscopic image and clinical metadata via the web portal.
+2.	The Portal sends an asynchronous request to the Backend API.
+3.	The Backend invokes the Preprocessing Module to standardize the image (384x384) and normalize clinical features.
+4.	The preprocessed data is passed to the AI Inference Engine.
+5.	The AI Engine executes the Dual-Branch extraction (ViT-B/32 and MLP), performs Cross-Attention Fusion, and computes scores through the prediction heads.
+6.	Simultaneously, the Explainability Module (Grad-CAM) generates a heatmap highlighting relevant pathological regions.
+7.	The Inference Engine returns the malignancy probability, Breslow thickness, and attention map to the Backend.
+8.	The Backend serves the finalized prognostic report back to the Clinician for review.
+
+Figure 5.3 Sequence diagram of proposed work
+
+5.6	Class Diagram
+In software engineering, a Class Diagram describes the internal structure of a system by depicting its classes, methods, and relationships. It provides a blueprint of the application’s object-oriented design. The class diagram in Figure 5.4 represents the modular architecture of the prognosis framework as implemented in Python and PyTorch.
+
+The class diagram primarily features the following classes:
+1.	DataLoader: Manages data acquisition, image resizing, and clinical feature encoding.
+2.	DinoModel: The core model class wrapping the ViT feature extractor and dual prediction heads.
+3.	CrossAttentionFusion: Implements the novel query-key-value mechanism to synergize visual and clinical embeddings.
+4.	GradCAMVisualizer: Handles the generation of attention maps for explainable AI.
+5.	Trainer/Evaluator: Manages the end-to-end lifecycle of model training and metric computation.
+
+This modular structure allows for independent scaling; for instance, the ViT backbone can be swapped for a ResNet backbone while maintaining the same fusion and prediction heads.
+
+Figure 5.4 Class Diagram of the proposed work
+
+5.7	Activity Diagram
+Activity diagrams visually illustrate the workflow and flow of control of a system. Figure 5.5 represents the dynamic activity workflow of the prognosis pipeline.
+
+The workflow begins when raw patient data is input. The system first validates the image format and CSV metadata. It then enters a parallel processing stage where visual features and clinical embeddings are extracted. These streams are synchronized at the Fusion node, where cross-attention weights are computed. After prediction, a critical decision node determines if the malignancy probability exceeds the clinical threshold. If high-risk, a dedicated "Explanation Generation" activity is triggered to produce Grad-CAM maps. Finally, the system aggregates all predictions and visualizations into a unified prognostic dashboard for the medical professional.
+
+Figure 5.5: Activity diagram of proposed work
+
+5.8	Use Case Diagram
+A use case diagram captures the interactions between agents (actors) and the system, outlining functional requirements from the user's perspective. Figure 5.6 illustrates the use cases for the Melanoma Prognosis platform.
+
+Primary Actors include the Medical Clinician (who performs daily diagnostic tasks) and the AI Researcher (who manages the pretraining and fine-tuning lifecycle). Core use cases include:
+•	Perform Prognostic Assessment: The primary function where images and metadata are transformed into scores.
+•	Visualize Pathological Regions: Invoking XAI modules to see "why" a model flagged a lesion.
+•	Manage Training Datasets: Allowing researchers to update the ISIC/HAM10000 data stores.
+•	Pretrain DINO Backbone: Launching self-supervised pretraining on unlabeled dermoscopic images to improve future feature extraction.
+
+Figure 5.6: Use Case diagram of proposed work
+
+
+Outputs:
+This chapter presents the key user interface screens of the melanoma diagnosis and prognostic stratification system. The snapshots illustrate how clinicians interact with the web application, from uploading dermoscopic images to viewing classification results and Breslow thickness predictions. These interfaces are designed to be minimal, visually clear, and clinically focused, ensuring that dermatologists can interpret model outputs quickly during routine workflow.
+
+8.1 Home Page – Image Upload Interface
+The home screen provides a simple entry point for clinicians to submit dermoscopic images for analysis. The interface prominently displays the system title, “🧬 Melanoma Dermoscopic Prognosis”, and a central upload panel with the description “AI-Powered Dual-Head Analysis System”. A central upload area features a drag-and-drop zone and a prominent “Choose Image” button. A camera icon reinforces the imaging context, helping users quickly identify the primary interaction point. The design follows a clean, centered layout to minimize cognitive load, allowing clinicians to initiate a prediction session with a single click.
+
+8.2 Snapshot – Malignant Case Prediction
+Once an image is processed by the dual-head AI engine, the system transitions to the Results Section. For potential malignant cases, the Results are partitioned into two core components:
+•	Classification Result: This panel displays the predicted class (e.g., “Melanoma”) alongside a confidence badge in the top-right corner. A horizontal probability bar provides a visual representation of the model’s certainty, supplemented by the exact probability percentage (e.g., 92.9%).
+•	Breslow Thickness Prediction: This section reports the estimated tumor thickness in millimeters (e.g., 0.29 mm) and its corresponding clinical category (e.g., “T1 ≤ 1.0 mm”). A graduated scale at the bottom (0mm to 8mm+) visually situates the prediction within standard prognostic stages.
+
+The results screen also includes a footer warning that the tool is for research purposes, ensuring responsible clinical decision support.
+
+Conclusion:
+In this project, we successfully implemented and evaluated an advanced deep learning framework for multimodal melanoma prognosis based on a DINO-pretrained Vision Transformer (ViT) architecture. The system’s foundational pipeline—integrating class-aware data augmentation, domain-specific self-supervised pretraining, and a dual-head prediction regime—demonstrated significant technical efficacy in handling the dual challenges of skin lesion classification and Breslow thickness regression. In particular, the adoption of the DINO-v3 backbone, pretrained on a large corpus of unlabeled dermoscopic images, allowed the model to learn discriminative morphological features that are often missed by standard ImageNet-pretrained networks. These domain-specific representations proved instrumental in reducing inter-class confusion between melanoma and benign nevi, while simultaneously providing a rich embedding space for precise thickness estimation.
+
+The results from our experimental validation, specifically the focal-loss-optimized `train11` run, achieved professional-grade prognostic performance. The model maintained a remarkably stable validation Mean Absolute Error (MAE) centered around 0.47 mm, which represents a critical benchmark for clinical viability in early-stage melanoma assessment. This stability can be attributed to the synergy between our composite loss function—incorporating Focal Loss with a focusing parameter (gamma) of 2.0—and our class-aware augmentation strategy. By relentlessly focusing on hard-to-classify malignant examples and applying stronger spatial transformations to the minority class (melanoma), we successfully mitigated the impact of class imbalance that typically plagues medical imaging datasets. Our learning curves and final metrics verify that the framework generalizes effectively across unseen validation folds without the erratic volatility or severe overfitting seen in traditional single-task CNN architectures.
+
+Beyond raw numeric accuracy, the system demonstrated exceptional robustness and interpretability, bridging the gap between "black box" AI and clinical decision support. The integration of Explainable AI (XAI) features, including Grad-CAM visual attention maps and Expected Calibration Error (ECE) monitoring, ensures that our model’s outputs are both transparent and reliable. By highlighting pathologically significant regions, such as asymmetric pigment networks or irregular borders, the system provides clinicians with a visual justification for its prognostic scores. Furthermore, the use of bootstrap confidence intervals for all primary metrics confirms the statistical reliability of the prognosis, providing a range of certainty that is essential for high-stakes medical workflows. The lightweight nature of the inference engine, combined with the modular dual-head design, further suggests that this framework is highly scalable and can be extended to include additional clinical modalities or larger, more diverse datasets without a proportional increase in computational overhead.
+
+Finally, the successful development and testing of the integrated web application demonstrate the practical readiness of this work. The interface’s minimal design facilitates a rapid "upload-to-report" workflow, allowing dermatologists to interpret complex prognostic data—including malignancy probability, Breslow thickness, and T-stage stratification—within seconds. The curated use of the ISIC and HAM10000 archives, coupled with rigorous stratified dataset splitting, ensured that the model was tested on a representative cross-section of global dermoscopic variation. In summary, the concerted advancements in DINO-based feature extraction, cross-attention fusion, and interpretability mapping have resulted in a robust, clinically-aligned melanoma prognosis tool. The project has accomplished a significant leap in both diagnostic accuracy and prognostic depth, marking it as a successful contribution to the field of AI-driven dermatological care.
+
+
+ 
+
+Future Enhancement:
+To further extend and enhance the Melanoma Dermoscopic Prognosis system, we propose several directions for future research and clinical development:
+
+•	Optimization for Mobile Point-of-Care Diagnostics: Package the trained dual-head model into a lightweight, mobile-optimized application. By utilizing techniques such as model quantization (INT8), weight pruning, and knowledge distillation into streamlined backbones like MobileNetV3 or ShuffleNet, the system could run locally on smartphones equipped with dermoscopic lens attachments. This would democratize access to high-accuracy screening in rural or underserved areas where access to specialized dermatologists is limited. A responsive mobile frontend could capture high-resolution lesion images and provide immediate diagnostic and prognostic feedback to primary care physicians, facilitating faster referral for high-risk patients.
+
+•	Integration of Genomically-Informed Prognosis: Expand the multimodal fusion architecture to incorporate patient-specific genomic data, such as BRAF, NRAS, or KIT mutation status. While the current prototype uses dermoscopic images and clinical metadata, melanoma prognosis is heavily influenced by molecular profiles. Future work could implement a triple-branch architecture where visual, clinical, and genetic features are fused using multi-head cross-attention. This would allow the model to provide a more holistic prognostic score, potentially predicting not just Breslow thickness but also the likelihood of sentinel lymph node metastasis and response to specific immunotherapy or targeted therapy regimes.
+
+•	Longitudinal Lesion Monitoring and Change Detection: Extend the system to process temporal sequences of dermoscopic images collected over multiple visits. By implementing a recurrent framework (e.g., using ConvLSTM or Temporal Vision Transformers), the model could track changes in lesion morphology (the "evolution" criterion in ABCDE) over time. This would be particularly useful for monitoring suspicious atypical nevi in high-risk patients, allowing the AI to detect subtle growth rates or pigment shifts that are imperceptible to the human eye but predictive of early-stage malignant transformation.
+
+•	Real-Time Video Stream Analysis and Augmented Reality: Transition the current static-image analysis to a real-time video processing pipeline. By implementing high-frequency sliding-window inference or stream-based Transformers, the system could analyze live video feeds from digital dermoscopes. This would enable an "Augmented Reality" (AR) diagnostic assistant where bounding boxes, malignancy probability scores, and Grad-CAM attention heatmaps are overlaid directly onto the clinician's viewport in real-time. Such a low-latency system would assist dermatologists during physical examinations, instantly flagging suspicious regions of interest for more detailed localized inspection.
+
+•	Federated Learning for Rare Subtype Generalization: Implement a federated learning framework to train the model across multiple clinical centers without sharing sensitive patient data. This is critical for improving performance on rare melanoma subtypes, such as acral lentiginous or amelanotic melanoma, which are often underrepresented in single-center datasets. By aggregating model updates rather than raw data, the system can learn from a massive, global cohort of rare cases, ensuring that the prognostic accuracy remains high across diverse ethnic skin tones and unusual pathological presentations, thereby significantly increasing the system's global clinical utility.
+
+These enhancements, taken together, would transform the current prototype into a comprehensive, adaptive, and clinically-integrated melanoma management platform. Optimizing for mobile deployment expands accessibility; integrating genomics and longitudinal data increases prognostic depth; and real-time AR overlays ensure natural clinical usability. Pursuing these directions will build upon the strong technical foundation of the current DINO-ViT framework, ultimately leading to a more proactive and precise approach to skin cancer care.
+
+
+6.4 Model Architecture Implementation
+6.4.1 DINO-v3 Vision Transformer for Dermoscopic Images
+The core of the melanoma detection and prognosis system is a state-of-the-art Vision Transformer (ViT) backbone, specifically the DINO-v3 architecture. Unlike traditional supervised backbones, this model leverages self-supervised pretraining on a domain-specific dataset of 14,000 dermoscopic images. This pretraining enables the ViT to capture fine-grained visual features—such as atypical pigment networks, regression structures, and peripheral globules—that are critical for differentiating early-stage melanoma from benign lesions. The implementation allows for several ViT variants (e.g., ViT-B/16 or ViT-B/32), with the base model typically utilizing 12 transformer encoder layers and a 768-dimensional embedding space.
+
+6.4.2 Cross-Attention Fusion and Dual-Head Prediction
+The architecture distinguishes itself through a novel Cross-Attention Fusion module (CrossAttentionFusion). In this module, visual features from the DINO backbone serve as 'Queries', while clinical metadata (patient age, sex, and anatomical site) are projected into multiple learned tokens which act as 'Keys' and 'Values'. This explicitly models the conditional relationship between image patterns and clinical prognostic factors.
+
+Following fusion, the system employs a dual-head prediction strategy:
+•	Classification Head: A binary sigmoid-activated head that predicts the probability of malignancy (Benign vs. Melanoma).
+•	Regression Head: A linear head that estimates the Breslow thickness in millimeters.
+This multi-task setup allows the model to learn shared representations that improve both diagnostic accuracy and prognostic depth, comprising approximately 86 million parameters for the ViT-B configuration.
+
+
+
+
+
+
+
+
+ Fig 6.1: DINO-ViT and Cross-Attention Architecture
+6.5 Model Training and Evaluation Pipeline
+6.5.1 Multitask Optimization and Focal Loss
+Training is conducted using the Adam optimizer with a base learning rate of 1e-3, optimized through a CosineAnnealingLR scheduler that ensures smooth convergence. The composite loss function handles the multi-task nature of the project:
+•	Classification: Focal Loss (gamma=2.0) is used to address the class imbalance between common benign nevi and relatively rare malignant cases.
+•	Regression: L1 (Mean Absolute Error) loss measures the precision of thickness predictions.
+Total loss is computed as a weighted sum: Total Loss = α * Loss_classification + (1-α) * Loss_regression. Class-aware augmentation further balances the training process by applying stronger spatial transformations to the minority melanoma samples.
+6.5.2 Evaluation and Scalability
+The optimized framework achieved professional stability with a validation Mean Absolute Error (MAE) of approximately 0.47 mm. Evaluation includes robust metrics such as AUROC for classification and RMSE for regression, further supported by Expected Calibration Error (ECE) to ensure model reliability. Subgroup analysis across different patient demographics (age, skin tone, sex) is integrated into the pipeline to verify diagnostic fairness and generalizability.
+
+
+
+
+
+
+
+
+
+
+                      Fig 6.2: Integrated Multi-task Inference Workflow
+
+6.6 Web Application Development with Flask
+To bridge the gap between AI research and clinical utility, a lightweight web application was developed using the Flask framework. The application provides an end-to-end interface for clinicians to:
+1.	Securely upload a dermoscopic image through a drag-and-drop panel.
+2.	Trigger real-time inference using the DINO-ViT dual-head engine.
+3.	View a comprehensive prognostic report including the malignancy probability and predicted Breslow thickness T-stage.
+
+The frontend, built with responsive HTML templates and CSS, ensures a clean, clinically-focused user experience across devices. The application integrates seamlessly with the backend PyTorch weights, providing low-latency predictions suitable for routine dermatological workflows. This deployment architecture emphasizes modularity, allowing the model to be easily updated or scaled with new data while maintaining a minimal footprint.

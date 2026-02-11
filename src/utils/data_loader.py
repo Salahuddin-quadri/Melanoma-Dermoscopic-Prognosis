@@ -219,7 +219,7 @@ def load_emb_data(metadata_path: str, image_dir: str) -> pd.DataFrame:
 
     df = pd.concat([pos, neg]).reset_index(drop=True)
     # TEMPORARY: remove class 0 entirely (keep only melanoma)
-    df = df[df.label == 1.0].reset_index(drop=True)
+    # df = df[df.label == 1.0].reset_index(drop=True)
 
     return df
 

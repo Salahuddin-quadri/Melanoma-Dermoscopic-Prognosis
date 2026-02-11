@@ -542,8 +542,8 @@ def train_model(
     class_aware_augment: bool = False,
     focal_gamma: float = 2.0,
     num_workers: int = 4,
-    learning_rate: float = 1e-3,
-    patience: int = 15,
+    learning_rate: float = 2e-5,
+    patience: int = 20,
     lr_scheduler: Optional[str] = "cosine",
 ) -> Tuple[Dict[str, float], str]:
     """
@@ -616,6 +616,8 @@ def train_model(
     checkpoint_dir = output_dir / "checkpoints"
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_path = str(checkpoint_dir / "best.pt")
+    latest_checkpoint_path = str(checkpoint_dir / "latest.pt")
+    best_val_mae_path = str(checkpoint_dir / "best_val_mae.pt")
     
     # Create log file path
     log_file = output_dir / f"training_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
@@ -701,6 +703,7 @@ def train_model(
 
     # Training loop
     best_val_metric = -1.0
+    best_val_mae = float('inf')  # For tracking best MAE separately
     bad_epochs = 0
     
     # Training history for logging and visualization
@@ -775,20 +778,49 @@ def train_model(
         # Save training log
         _save_training_log(training_history, log_file, epoch)
 
-        # Check for improvement
+        # Save latest checkpoint after every epoch
+        torch.save({"model_state": model.state_dict()}, latest_checkpoint_path)
+
+        # Check for improvement in main metric
         is_better = (best_val_metric < 0) or (val_metric > best_val_metric)
 
         if is_better:
             best_val_metric = val_metric
             bad_epochs = 0
             torch.save({"model_state": model.state_dict()}, checkpoint_path)
-            print(f"✅ Saved best checkpoint (metric={val_metric:.4f}) → {checkpoint_path}\n")
+            print(f"✅ Saved best checkpoint (metric={val_metric:.4f}) → {checkpoint_path}")
         else:
             bad_epochs += 1
-            print(f"❌ No improvement ({bad_epochs}/{patience})\n")
-            if bad_epochs >= patience:
-                print(f"🛑 Early stopping triggered after {patience} epochs without improvement")
-                break
+
+        # Check for improvement in val_mae (for multitask or regression)
+        val_mae_available = False
+        current_val_mae = None
+        is_best_mae = False
+        if multitask or task == "regression":
+            current_val_mae = val_stats.get("val_mae")
+            if current_val_mae is not None:
+                val_mae_available = True
+                is_best_mae = current_val_mae < best_val_mae
+                if is_best_mae:
+                    best_val_mae = current_val_mae
+                    torch.save({"model_state": model.state_dict()}, best_val_mae_path)
+                    print(f"✅ Saved best val_mae checkpoint (val_mae={current_val_mae:.4f}) → {best_val_mae_path}")
+
+        # Print status
+        if is_better:
+            if is_best_mae:
+                print()  # Already printed val_mae message above
+            else:
+                print()  # Just print newline for best checkpoint
+        else:
+            print(f"❌ No improvement in main metric ({bad_epochs}/{patience})")
+            if val_mae_available:
+                print(f"   Current val_mae: {current_val_mae:.4f}, Best val_mae: {best_val_mae:.4f}")
+            print()
+
+        if bad_epochs >= patience:
+            print(f"🛑 Early stopping triggered after {patience} epochs without improvement")
+            break
     
     # Save final training plots
     _save_training_plots(training_history, output_dir)

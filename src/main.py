@@ -42,8 +42,13 @@ def parse_args():
 		help="Image dimensions [height, width]")
 	
 	# Model selection
-	parser.add_argument("--model_type", type=str, choices=["resnet", "dino"], default="dino",
-		help="Model architecture: 'resnet' for ResNet50, 'dino' for DINO ViT")
+	parser.add_argument(
+		"--model_type",
+		type=str,
+		choices=["resnet", "resnet50", "dino", "simple_cnn", "vgg_like"],
+		default="dino",
+		help="Model architecture: 'resnet'/'resnet50' for ResNet50, 'dino' for DINO ViT, 'simple_cnn' for a basic CNN, 'vgg_like' for a VGG-style model"
+	)
 	parser.add_argument("--dino_checkpoint", type=str, default="",
 		help="Path to domain-specific DINO checkpoint (e.g., dino_v3/outputs_dino/checkpoints/best.pt). "
 		     "If not provided, uses ImageNet pretrained ViT weights.")
@@ -126,14 +131,14 @@ def main():
 
 	# Build model based on selected architecture
 	image_h, image_w = args.image_size
-	
+
 	print(f"\n{'='*60}")
 	print(f"MODEL CONFIGURATION")
 	print(f"{'='*60}")
 	print(f"Model type: {args.model_type}")
 	print(f"Task: {args.task}{' (multitask)' if args.multitask else ''}")
 	print(f"Input: Images only (no clinical features)")
-	
+
 	if args.model_type == "dino":
 		# DINO model
 		dino_ckpt = args.dino_checkpoint if args.dino_checkpoint else None
@@ -141,7 +146,6 @@ def main():
 			print(f"DINO checkpoint: {dino_ckpt}")
 		else:
 			print("DINO checkpoint: None (using ImageNet pretrained)")
-		
 		model = create_dino_hybrid_model(
 			task=args.task,
 			multitask=args.multitask,
@@ -155,9 +159,9 @@ def main():
 		)
 		print(f"Hidden dimension: {args.hidden_dim}")
 		print(f"Frozen layers: {args.freeze_backbone_layers}")
-	else:
-		# ResNet50 model
-		model = create_hybrid_model(
+	elif args.model_type in ["resnet", "resnet50"]:
+		from models import create_resnet50_model
+		model = create_resnet50_model(
 			hidden_dim=args.hidden_dim,
 			dropout_rate=args.dropout,
 			pretrained=True,
@@ -165,6 +169,26 @@ def main():
 			multitask=args.multitask,
 		)
 		print(f"Hidden dimension: {args.hidden_dim}")
+	elif args.model_type == "simple_cnn":
+		from models import create_simple_cnn_model
+		model = create_simple_cnn_model(
+			hidden_dim=args.hidden_dim,
+			dropout=args.dropout,
+			task=args.task,
+			multitask=args.multitask,
+		)
+		print(f"Hidden dimension: {args.hidden_dim}")
+	elif args.model_type == "vgg_like":
+		from models import create_vgg_like_model
+		model = create_vgg_like_model(
+			hidden_dim=args.hidden_dim,
+			dropout=args.dropout,
+			task=args.task,
+			multitask=args.multitask,
+		)
+		print(f"Hidden dimension: {args.hidden_dim}")
+	else:
+		raise ValueError(f"Unknown model_type: {args.model_type}")
 	print(f"{'='*60}\n")
 	
 	# Training or evaluation

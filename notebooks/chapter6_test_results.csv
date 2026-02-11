@@ -1,0 +1,9 @@
+Test ID,Test Case,Status
+TC-01,Dataloader - Valid Image-Only CSV,SKIP
+TC-02,Dataloader - Missing Optional Clinical Columns,FAIL
+TC-03,Preprocessing - Normalization & Transforms,FAIL
+TC-04,Model Architecture - Regression-Only Mode,FAIL
+TC-05,Model Architecture - Multitask Mode,FAIL
+TC-06,Metrics Computation - Classification,FAIL
+TC-07,Metrics Computation - Regression,PASS
+TC-08,Performance Tests - Throughput & Memory,FAIL

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Melanoma Dermoscopic Prognosis - AI Diagnosis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🧬 Melanoma Dermoscopic Prognosis</h1>
+            <p class="subtitle">AI-Powered Dual-Head Analysis System</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-section" id="uploadSection">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📷</div>
+                    <h2>Upload Dermoscopic Image</h2>
+                    <p>Drag and drop an image or click to browse</p>
+                    <input type="file" id="imageInput" accept="image/*" hidden>
+                    <button class="btn-primary" onclick="document.getElementById('imageInput').click()">
+                        Choose Image
+                    </button>
+                </div>
+                <div class="image-preview" id="imagePreview" style="display: none;">
+                    <img id="previewImage" src="" alt="Preview">
+                    <button class="btn-secondary" onclick="resetUpload()">Change Image</button>
+                </div>
+            </section>
+
+            <!-- Neural Network Visualization -->
+            <section class="network-section" id="networkSection" style="display: none;">
+                <h2>Neural Network Processing</h2>
+                <div class="network-container">
+                    <svg id="networkSvg" viewBox="0 0 800 400">
+                        <!-- Network layers will be drawn here -->
+                    </svg>
+                </div>
+                <div class="processing-status" id="processingStatus">
+                    <div class="spinner"></div>
+                    <p>Analyzing image...</p>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <h2>Analysis Results</h2>
+                
+                <!-- Classification Result -->
+                <div class="result-card classification-card">
+                    <div class="result-header">
+                        <h3>🔬 Classification Result</h3>
+                        <div class="confidence-badge" id="clsConfidence"></div>
+                    </div>
+                    <div class="result-content">
+                        <div class="prediction-display" id="clsPrediction"></div>
+                        <div class="probability-bar">
+                            <div class="probability-fill" id="clsProbabilityBar"></div>
+                        </div>
+                        <div class="probability-text" id="clsProbabilityText"></div>
+                    </div>
+                </div>
+
+                <!-- Regression Result -->
+                <div class="result-card regression-card">
+                    <div class="result-header">
+                        <h3>📏 Breslow Thickness Prediction</h3>
+                    </div>
+                    <div class="result-content">
+                        <div class="thickness-display" id="regThickness"></div>
+                        <div class="category-display" id="regCategory"></div>
+                        <div class="thickness-scale">
+                            <div class="scale-markers">
+                                <span>0mm</span>
+                                <span>1mm</span>
+                                <span>2mm</span>
+                                <span>4mm</span>
+                                <span>8mm+</span>
+                            </div>
+                            <div class="scale-bar">
+                                <div class="scale-indicator" id="scaleIndicator"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn-primary" onclick="resetUpload()">Analyze Another Image</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>⚠️ This tool is for research purposes only. Not a substitute for professional medical diagnosis.</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
+

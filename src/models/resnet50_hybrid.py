@@ -32,8 +32,10 @@ class ResNet50Model(nn.Module):
 		super().__init__()
 		# Image backbone
 		backbone = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2 if pretrained else None)
-		for param in backbone.parameters():
-			param.requires_grad = False
+		# Allow fine-tuning if needed: freeze only if not multitask (for reference model flexibility)
+		if not multitask:
+			for param in backbone.parameters():
+				param.requires_grad = False
 		self.cnn_backbone = nn.Sequential(*list(backbone.children())[:-1])  # output: (B, 2048, 1, 1)
 		cnn_out_dim = 2048
 
@@ -46,10 +48,10 @@ class ResNet50Model(nn.Module):
 			nn.ReLU(inplace=True),
 			nn.Dropout(dropout_rate),
 		)
-		
+        
 		self.task = task
 		self.multitask = multitask
-		
+        
 		# Heads
 		self.cls_head = nn.Linear(hidden_dim, 1)
 		self.reg_head = nn.Linear(hidden_dim, 1)
@@ -84,6 +86,10 @@ class ResNet50Model(nn.Module):
 				return self.sigmoid(self.cls_head(projected)).squeeze(1)
 			else:
 				return self.reg_head(projected).squeeze(1)
+
+	# For reference: add a create_resnet50_model function for explicitness
+def create_resnet50_model(hidden_dim: int = 256, dropout_rate: float = 0.3, pretrained: bool = True, task: str = "classification", multitask: bool = False) -> nn.Module:
+	return ResNet50Model(hidden_dim=hidden_dim, dropout_rate=dropout_rate, pretrained=pretrained, task=task, multitask=multitask)
 
 
 def create_hybrid_model(

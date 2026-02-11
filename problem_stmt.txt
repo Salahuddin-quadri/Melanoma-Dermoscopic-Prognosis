@@ -1,0 +1,109 @@
+================================================================================
+PROBLEM STATEMENT
+================================================================================
+
+Project Title: 
+Deep Learning-Based Melanoma Prognosis from Dermoscopic Images: A Multitask 
+Framework for Integrated Diagnosis and Thickness Prediction
+
+Problem Description:
+
+Melanoma represents the most aggressive form of skin cancer, with incidence rates 
+increasing globally and directly impacting morbidity and mortality. Although early 
+detection substantially improves survival rates, current diagnostic methods rely 
+heavily on subjective clinical assessment and time-intensive histopathological 
+examination, leading to inter-observer variability and delayed diagnoses.
+
+Contemporary AI-driven solutions for skin cancer detection exhibit critical 
+limitations in the clinical context: (1) they typically analyze a single modality—
+either dermoscopic images or histopathology—rather than providing an integrated 
+diagnostic pipeline; (2) they often lack interpretability and explainability, 
+undermining clinician trust in automated recommendations; and (3) their architectures 
+are frequently over-parameterized, rendering them impractical for deployment in 
+resource-constrained healthcare environments.
+
+This fragmentation and opacity delay timely, evidence-based diagnosis precisely 
+when unified, transparent tools are most critical. Additionally, the inherent 
+class imbalance in skin lesion datasets (benign lesions far exceed malignant cases) 
+exacerbates generalization challenges and necessitates specialized loss functions 
+and data augmentation strategies.
+
+Project Objective:
+
+The purpose of this project is to develop a comprehensive multitask deep learning 
+framework that addresses these clinical and technical gaps by: (1) leveraging 
+self-supervised Vision Transformer (DINO ViT) backbones fine-tuned on dermoscopic 
+images for robust feature extraction; (2) implementing a dual-head architecture 
+that simultaneously performs melanoma classification and Breslow thickness 
+estimation—the latter being a critical prognostic biomarker; (3) employing 
+advanced loss functions (Focal Loss, weighted BCE) combined with class-aware 
+augmentation to mitigate class imbalance; and (4) providing interpretable 
+attention maps and calibrated confidence estimates to support clinician 
+decision-making.
+
+This framework addresses the limitations of traditional diagnostic methods by 
+offering a scalable, transparent, and clinically integrated solution capable of 
+supporting real-time screening and prognostic assessment, thereby improving both 
+diagnostic accuracy and patient outcomes.
+
+================================================================================
+
+Detailed Objectives:
+
+1. Develop a comprehensive **multimodal deep learning framework** that synergizes dermoscopic imaging with structured clinical metadata (e.g., patient demographics, anatomical site) to enhance diagnostic accuracy beyond the limitations of single-modality systems.
+
+2. Implement a **domain-specific self-supervised learning strategy** by pretraining a Vision Transformer (ViT) backbone with **DINO-v3** on large-scale unlabeled dermoscopic data, effectively mitigating the scarcity of annotated medical images and improving feature representation.
+
+3. Construct a robust **dual-head architecture** capable of simultaneous lesion classification (Benign vs. Malignant) and prognostic regression (Breslow thickness), utilizing **cross-attention mechanisms** to model complex interactions between visual and tabular features.
+
+4. Address severe class imbalance and ensure **clinical interpretability** by integrating **Focal Loss**, **class-aware augmentation**, and explainable AI (XAI) modules (e.g., attention maps), validating the system's reliability, calibration, and transparency on diverse datasets.
+
+
+MOTIVATION
+
+The motivation for this project stems from the urgent need to democratize access to expert-level melanoma diagnosis, particularly given the rising global incidence of aggressive skin cancers. While early detection is the single most significant factor in patient survival, current diagnostic workflows remain heavily dependent on subjective visual assessment and invasive procedures, which are often inaccessible in resource-constrained settings. This disparity drives a critical need for automated systems that are not only accurate but also robust enough for diverse clinical environments.
+
+As engineers committed to advancing medical AI, we are driven to bridge the gap between "black box" algorithms and clinical trust. The decision to employ a **Multimodal Vision Transformer framework** was inspired by the way expert dermatologists diagnose—synthesizing visual cues with patient history. By leveraging **self-supervised learning (DINO-v3)**, we aim to overcome the persistent challenge of data scarcity in medical imaging, demonstrating that powerful diagnostic tools can be built without prohibitive annotation costs.
+
+Ultimately, this work is motivated by the goal of creating a transparent, "glass box" solution. We believe that for AI to be truly useful in healthcare, it must explain its reasoning. Therefore, integrating **explainability via attention maps** is not just a technical feature but a core ethical commitment, ensuring that our system serves as a reliable, interpretable partner to clinicians rather than an opaque replacement.
+
+
+LIMITATIONS OF EXISTING SYSTEM
+
+1.  **Single-Modality Reliance**: Most existing systems analyze only dermoscopic images, ignoring critical clinical context (e.g., patient age, anatomical site) that dermatologists use for accurate diagnosis.
+2.  **Data Scarcity & Annotation Costs**: Deep learning models typically require massive labeled datasets. In medical imaging, high-quality annotations are expensive and scarce, limiting model performance.
+3.  **Severe Class Imbalance**: Real-world datasets are dominated by benign lesions. Standard models often bias towards the majority class, failing to detect rare but fatal melanomas.
+4.  **"Black Box" Opacity**: Convolutional Neural Networks (CNNs) often provide predictions without explanation, preventing clinicians from verifying the features (e.g., asymmetry, border irregularity) driving the diagnosis.
+5.  **Lack of Prognostic Depth**: Many systems only classify "Benign vs. Malignant" without predicting prognostic markers like Breslow thickness, which is essential for treatment planning.
+
+PROPOSED SYSTEM
+
+We propose a **Multimodal Diagnostic Framework** that integrates **dermoscopic imaging** with **structured clinical metadata** to replicate expert dermatological assessment. The core of our system is a **Vision Transformer (ViT)** backbone pretrained with **self-supervised DINO-v3**, allowing robust feature extraction from limited, unlabeled data.
+
+Key innovations include:
+*   **Cross-Attention Fusion**: Dynamically weighs the importance of visual features against clinical data (e.g., age, sex) for a holistic diagnosis.
+*   **Dual-Head Prediction**: Simultaneously performs **malignancy classification** and **Breslow thickness regression**, providing both a diagnosis and a prognostic risk score.
+*   **Imbalance-Aware Training**: Utilizes **Focal Loss** and **class-aware augmentation** to prioritize the detection of hard-to-diagnose malignant cases.
+PROPOSED METHODOLOGY
+
+The proposed methodology follows a systematic, four-stage pipeline designed to ensure robust performance and clinical applicability:
+
+1.  **Data Acquisition & Preprocessing**:
+    *   **Dataset**: Aggregation of public dermoscopic datasets (e.g., ISIC, HAM10000) containing images and associated metadata (age, sex, anatomical site).
+    *   **Preprocessing**: Images are resized to 384x384 and normalized. Clinical metadata is standardized and encoded (one-hot/numerical).
+    *   **Augmentation**: To address class imbalance, we apply **class-aware augmentation** (e.g., rotation, color jitter) specifically to minority class samples, ensuring the model sees diverse examples of malignant lesions.
+
+2.  **Feature Extraction (The "Dual-Branch" Design)**:
+    *   **Image Branch**: A **Vision Transformer (ViT)** backbone is employed to process dermoscopic images. Crucially, this backbone is initialized with **DINO-v3 weights** (self-supervised learning), enabling it to recognize subtle dermatological patterns without requiring massive labeled datasets.
+    *   **Clinical Branch**: A separate Multi-Layer Perceptron (MLP) processes the structured clinical metadata to extract patient-specific risk factors.
+
+3.  **Multimodal Fusion & Dual-Head Prediction**:
+    *   **Cross-Attention Fusion**: Instead of simple concatenation, a cross-attention module dynamically fuses visual and clinical embeddings, allowing the model to "attend" to specific image regions based on clinical context (e.g., focusing more on irregular borders in older patients).
+    *   **Task Heads**: The fused representation feeds into two parallel heads:
+        *   **Classification Head**: Outputs probability of Malignancy (Benign vs. Malignant).
+        *   **Regression Head**: Predicts Breslow Thickness (mm), a vital prognostic indicator.
+
+4.  **Training & Validation**:
+    *   **Loss Function**: A composite loss combines **Focal Loss** (for classification imbalance) and **MSE/L1 Loss** (for thickness regression).
+    *   **Evaluation**: The model is evaluated on held-out test sets using metrics like **AUC-ROC** (discrimination), **MAE** (thickness error), and **Expected Calibration Error (ECE)** to ensure predictions are not just accurate but also reliable confidence estimates.
+

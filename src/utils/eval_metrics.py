@@ -150,6 +150,12 @@ def compute_classification_metrics(
 	Returns:
 		Dictionary of metrics
 	"""
+	# Store function reference to avoid parameter shadowing
+	# Get the function from globals before parameter shadows it
+	import sys
+	current_module = sys.modules[__name__]
+	_compute_ece_func = getattr(current_module, 'compute_ece')
+	
 	y_pred_binary = (y_pred_probs >= threshold).astype(int)
 	y_true_int = y_true.astype(int)
 	
@@ -189,9 +195,9 @@ def compute_classification_metrics(
 		except Exception:
 			pass
 	
-	# ECE
+	# ECE - use stored function reference to avoid parameter shadowing
 	if compute_ece:
-		ece = compute_ece(y_pred_probs, y_true_int)
+		ece = _compute_ece_func(y_pred_probs, y_true_int)
 		metrics["ece"] = ece
 	
 	return metrics
