@@ -1,0 +1,93 @@
+
+Melanoma remains one of the deadliest skin cancers worldwide, and patient outcomes depend critically on early, accurate diagnosis and appropriate prognostic assessment. Conventional workflows rely on dermoscopic screening followed by histopathological confirmation, but these steps can be time‑consuming and subject to inter‑observer variability. To accelerate diagnostic throughput and reduce delays, automated dermoscopy tools must be accurate, well‑calibrated, and interpretable across heterogeneous imaging conditions.
+
+Recent advances in self‑supervised learning and attention mechanisms enable compact, high‑performance models for dermoscopic image analysis. In this project we focus exclusively on dermoscopy and develop a multitask framework that leverages DINO‑initialized Vision Transformer backbones (when available) together with attention‑augmented convolutional modules. The system is designed to produce two outputs concurrently from dermoscopic images: (i) a binary malignancy prediction and (ii) a Breslow thickness estimate, the latter providing a clinically useful prognostic signal derived from image features.
+
+Key design priorities are clinical relevance, interpretability, and deployability. To mitigate class imbalance common in lesion datasets, training uses focal and weighted BCE losses alongside class‑aware augmentation. Interpretability is provided through attention maps and class activation visualizations that highlight image regions driving model outputs, improving clinician trust. Models are evaluated using discrimination and calibration metrics (AUROC, accuracy, precision, recall, F1) and regression metrics (MAE, RMSE, R²), with uncertainty quantified via bootstrap confidence intervals.
+
+By concentrating on dermoscopic imaging and emphasizing explainability and resource‑aware architectures, the proposed system aims to accelerate clinical decision‑making, support triage in low‑resource environments, and deliver a transparent assistive tool for dermatologists.
+
+significantly accelerates diagnosis, reduces the workload on medical professionals, and supports the creation of a personalized treatment plan based on both visual and cellular-level data.
+
+1.2	Purpose of the project
+The primary objective of this project is to develop a robust, interpretable, and deployable deep learning system for melanoma diagnosis and prognostication that integrates dermoscopic screening and histopathological analysis. Specifically, the system aims to:
+
+- Provide accurate binary classification of skin lesions (melanoma vs. benign) from dermoscopic images.
+- Estimate Breslow thickness as a continuous prognostic biomarker to assist staging and treatment planning.
+- Improve model calibration and uncertainty quantification to increase clinical trustworthiness.
+- Produce visual explanations (attention maps/heatmaps) that localize diagnostically relevant regions and support clinician interpretation.
+
+To accomplish these aims the project leverages attention‑augmented convolutional modules for image localization and a lightweight Vision Transformer (DINO‑initialized where appropriate) for robust feature extraction from high‑resolution inputs. Training strategies include focal and weighted BCE losses, class‑aware augmentation, and a weighted multitask loss to balance classification and regression objectives.
+
+1.2.1	Methodology (Current Approach)
+The system design follows a dual‑branch architecture:
+
+- Dermoscopy branch: an attention‑augmented CNN processes dermoscopic images, producing classification probabilities and localized attention maps that highlight salient image regions.
+- Histopathology branch: a ViT‑based encoder processes tiled or downsampled WSI patches and contributes high‑resolution morphological features where biopsy data are available.
+- Multitask head: a shared projection layer feeds two lightweight heads—one for binary classification (with sigmoid output) and one for regression (thickness estimate).
+
+Model training emphasizes class imbalance mitigation (focal/weighted losses), data augmentation, and calibration techniques; evaluation uses discrimination (AUROC, accuracy, precision, recall, F1), regression (MAE, RMSE, R²), calibration (ECE), and bootstrap confidence intervals for uncertainty.
+
+1.2.2	Project Workflow
+The project follows an end‑to‑end experimental pipeline:
+
+- Data acquisition: collect and curate dermoscopic images (ISIC/Kaggle) and public histopathology WSIs.
+- Preprocessing: image resizing, normalization, stain normalization (for WSIs), and augmentation.
+- Model development: implement attention‑CNN and ViT backbones, dual‑head multitask layer, and training utilities (losses, schedulers, checkpoints).
+- Training & validation: train models with stratified splits, early stopping, and checkpointing; evaluate on held‑out cohorts.
+- Explainability & visualization: generate attention maps, Grad‑CAM overlays, and calibration plots for clinical review.
+
+1.2.3	Clinical Relevance and Benefits
+The integrated pipeline accelerates diagnosis and provides prognostic information in a single pass, reducing time to triage and supporting personalized management plans. Attention maps and calibrated probabilities increase transparency, facilitating clinician acceptance and safer decision support. The architecture is intentionally resource‑aware to enable deployment in constrained clinical settings and telemedicine scenarios.
+
+1.3	Scope of the Project
+This project focuses on algorithm development, experimental evaluation, and reproducible workflows. In scope are:
+
+- Model design and training using publicly available dermoscopic and histopathology datasets.
+- Implementation of attention mechanisms, multitask heads, and imbalance‑aware training strategies.
+- Quantitative evaluation using standard classification, regression, and calibration metrics, plus uncertainty estimation via bootstrapping.
+- Visual explainability tools (attention heatmaps, Grad‑CAM) for qualitative clinician assessment.
+
+Out of scope for this work are live clinical deployment, integration with hospital EHR systems, prospective clinical trials, and regulatory approval; these are left as future steps once model validity is established.
+
+1.4	Definitions
+•	Convolutional Neural Network (CNN)
+
+•	Dermoscopic Images
+Dermoscopic images are magnified, high‑resolution clinical photographs captured with a dermatoscope that reveal subsurface skin patterns and structures useful for non‑invasive melanoma screening.
+
+
+•	Attention Mechanism
+A computational module that weights different parts of the input according to relevance, enabling models to focus on informative regions and improving interpretability.
+
+•	Breslow Thickness
+Breslow thickness is a histopathological measurement (in millimeters) of melanoma depth and a key prognostic indicator used in staging and treatment planning.
+Techniques (rotation, flipping, scaling, color jitter, etc.) applied to training images to improve model generalization by synthetically increasing data diversity.
+
+•	Precision and Recall
+Precision (positive predictive value) is the proportion of positive predictions that are correct. Recall (sensitivity) is the proportion of actual positives correctly identified.
+
+	Title	Authors	Year	Dataset Used	Models/Methods	Key Findings	DOI/Link	Limitations	Review Notes
+1	Diagnosis and prognosis of melanoma from dermoscopy images using machine learning and deep learning: a systematic literature review	Hoda Naseri, Ali A. Safaei	2025	HAM10000, ISIC	DenseNet, DCNN	Achieves >95% accuracy; reviews challenges in data diversity and interpretability for thickness estimation	https://doi.org/10.1186/s12885-024-13423-y		
+2	Melanoma Breslow Thickness Classification Using Ensemble-Based Knowledge Distillation With Semi-Supervised Convolutional Neural Networks	Not fully extracted	2025	Not specified	Ensemble-based knowledge distillation, semi-supervised CNNs	Classifies in situ vs. invasive melanomas; addresses data imbalance	https://ieeexplore.ieee.org/document/10685145		
+
+        Litrature survey:							
+									
+									        
+3	Early-Stage Melanoma Benchmark Dataset		2025	EMB					
+4	Robust Melanoma Thickness Prediction via Deep Transfer Learning enhanced by XAI Techniques		2024	ISIC, Local					
+5	Combined deep learning and machine learning models for the prediction of stages of melanoma	Rashmi Ashtagi et al.	2024	Not specified	Multilayer Perceptron (MLP), Random Forest (RF)	Hybrid model achieves 97.42% accuracy for stage classification based on thickness	https://pdfs.semanticscholar.org/4ae6/e2d13639b9fee021b6003160388dca0abf35.pdf		
+6	Prediction of melanoma Breslow thickness using deep transfer learning algorithms	Juan-Carlos Hernández-Rodríguez et al.	2023	Not specified	EfficientNetB6, ResNetV2, InceptionV3	EfficientNetB6 achieves 75% accuracy for thickness (<0.8 mm vs. ≥0.8 mm); outperforms dermatologists	10.1093/ced/llad107		
+7	Design of a Machine Learning System to Predict the Thickness of a Melanoma Lesion in a Non-Invasive Way from Dermoscopic Images	Ádám Szijártó, Ellák Somfai, András Lőrincz	2023	Small proprietary dataset	EfficientNet CNN	71% balanced accuracy; potential for improvement with larger datasets	https://doi.org/10.4258/hir.2023.29.2.112		
+8	The Many Roles of Dermoscopy in Melanoma Detection	Cristina-Raluca Mihulecea et al.	2023	200 melanocytic lesions	Dermoscopic feature analysis	Dermoscopy aids thickness estimation via features like colors and structures	10.3390/life13020477		
+9	Assessment of melanoma thickness based on dermoscopy images: an open, web‐based, international, diagnostic study	S Polesie et al.	2022	1456 dermoscopic images	CNNs (pretrained and de novo)	Readers achieve 56.4% accuracy; pretrained CNN outperforms collective readers	https://doi.org/10.1111/jdv.18436		
+10	A comprehensive analysis of dermoscopy images for melanoma detection via deep CNN features	Himanshu K. Gajera, Deepak Ranjan Nayak, Mukesh A. Zaveri	2022	ISIC 2017	DenseNet-121, MLP	98.33% accuracy; emphasizes boundary localization for thickness estimation	https://doi.org/10.1016/j.bspc.2022.104186		
+11	Deep Learning Algorithms for Predicting Breslow Thickness from Dermoscopic Images of Acral Lentiginous Melanomas	Yu Seong Chu et al.	2022	Not specified	DL algorithms	Focuses on non-invasive thickness prediction for acral melanomas	10.1016/j.jid.2021.12.033		
+12	Evaluation of Melanoma Thickness with Clinical Close-up and Dermoscopic Images Using a Convolutional Neural Network		2022						
+13	Multispectral Imaging Algorithm Predicts Breslow Thickness of Melanoma	Szabolcs Bozsányi et al.	2021	Not specified	Multispectral imaging (MSI) algorithm	78% sensitivity for thickness subgroups (≤1 mm, 1–2 mm, >2 mm)	10.3390/jcm11010189		
+14	Can Dermoscopy Be Used to Predict if a Melanoma Is In Situ or Invasive?	Sam Polesie et al.	2021	Not specified	Dermoscopic feature analysis	Dermatologists achieve 67.4%-76.1% accuracy; all >1.0 mm melanomas identified as invasive	10.5826/dpc.1103a79		
+15	Dermoscopic Predictors of Tumor Thickness in Cutaneous Melanoma: A Retrospective Analysis of 245 Melanomas	Enrique Rodríguez-Lomba et al.	2021	245 melanomas	Dermoscopic feature analysis	Features like blue-white veil correlate with thickness (≥0.8 mm)	https://doi.org/10.5826/dpc.1103a59		
+16	Dermoscopy as a Tool for Estimating Breslow Thickness in Melanoma	M M Martínez-Piva et al.	2021	215 melanomas	Dermoscopic feature analysis	Features like blue-white veil, milky-red areas increase with thickness	10.1016/j.ad.2020.11.015		
+17	Machine learning approach in melanoma cancer stage detection	Not fully extracted	2020	Not specified	CNN with SMTP loss	Outperforms other loss functions for stage detection linked to thickness	https://doi.org/10.1016/j.jksuci.2020.09.002		
+
+
